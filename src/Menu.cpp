@@ -104,6 +104,7 @@ void Menu::Render()
     if (ImGuiMCP::Button("Refresh Followers")) {
         currentFollowers = Utils::GetActiveFollowers();
         selectedCompanionIndex = 0;
+        StatEditor::Harmonize();
     }
 
     ImGuiMCP::SameLine();
