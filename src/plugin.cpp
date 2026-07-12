@@ -1,4 +1,5 @@
 #include "SKSEMenuFramework.h"
+#include "StatEditor.h"
 #include "Menu.h"
 #include "Data.h"
 #include "LevelUpEventSink.h"

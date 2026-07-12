@@ -49,6 +49,12 @@ bool Stats::IsAttribute(RE::ActorValue actorValue) {
     return Find(Stats::Attributes, actorValue);
 }
 
+int Stats::GetMaxPoints(RE::ActorValue actorValue) {
+    if (IsAttribute(actorValue))
+        return -1;
+    return 100;
+}
+
 float Stats::GetStepValue(RE::ActorValue actorValue) {
     if (IsAttribute(actorValue))
         return 10.f;

@@ -43,6 +43,8 @@ find_package(CommonLibSSE CONFIG REQUIRED)
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     src/plugin.cpp
     src/SKSEMenuFramework.h
+    src/Utils.h
+    src/Utils.cpp
     src/Menu.h
     src/Menu.cpp
     src/Stats.h

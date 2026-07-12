@@ -34,23 +34,6 @@ static const char* GetActorValueName(RE::ActorValue actorValue) {
     }
 }
 
-static std::vector<RE::ActorHandle> GetActiveFollowers()
-{
-    std::vector<RE::ActorHandle> followers;
-    auto followerFaction = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESFaction>(0x5C84E, "Skyrim.esm");
-    auto processLists = RE::ProcessLists::GetSingleton();
-    
-    if (!followerFaction || !processLists) return followers;
-
-    for (auto& actorHandle : processLists->highActorHandles) {
-        auto actorPtr = actorHandle.get();
-        if (actorPtr && actorPtr->IsInFaction(followerFaction)) {
-            followers.push_back(actorHandle);
-        }
-    }
-    return followers;
-}
-
 static void RenderStatRow(RE::Actor *selectedActor, RE::ActorValue actorValue)
 {
     const char* name = GetActorValueName(actorValue);
@@ -93,7 +76,7 @@ static void RenderStatRow(RE::Actor *selectedActor, RE::ActorValue actorValue)
 void Menu::Register()
 {
     SKSEMenuFramework::SetSection("Companions' Path"); 
-    SKSEMenuFramework::AddSectionItem("Level Up", Menu::Render); 
+    SKSEMenuFramework::AddSectionItem("Stats", Menu::Render); 
 }
 
 void Menu::Render()
@@ -117,7 +100,7 @@ void Menu::Render()
 
     ImGuiMCP::SameLine();
     if (ImGuiMCP::Button("Refresh Followers")) {
-        currentFollowers = GetActiveFollowers();
+        currentFollowers = Utils::GetActiveFollowers();
         selectedCompanionIndex = 0;
     }
 

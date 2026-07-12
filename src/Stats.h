@@ -13,6 +13,7 @@ public:
     static std::array<RE::ActorValue, 5> MagicSkills;
     static std::array<RE::ActorValue, 7> MiscSkills;
     static bool IsAttribute(RE::ActorValue actorValue);
+    static int GetMaxPoints(RE::ActorValue actorValue);
     static float GetStepValue(RE::ActorValue actorValue);
     static float GetBaseValue(RE::Actor* actor, RE::ActorValue actorValue);
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+
+#include "Utils.h"
 #include "SKSEMenuFramework.h"
 #include "StatEditor.h"
 #include "Stats.h"
