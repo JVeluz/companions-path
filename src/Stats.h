@@ -1,19 +1,32 @@
 #pragma once
 
-#include <array>
-#include <string_view>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <span>
 
-class Stats
-{
+struct StatProfile {
+    std::vector<RE::ActorValue> Attributes;
+    std::vector<RE::ActorValue> Skills;
+    std::vector<RE::ActorValue> All;
+    std::unordered_map<RE::ActorValue, float> BaseValues;
+    
+    bool overrideAttributes = false;
+    bool overrideSkills = false;
+};
+
+class Stats {
 public:
-    static std::array<RE::ActorValue, 21> All;
-    static std::array<RE::ActorValue, 3> Attributes;
-    static std::array<RE::ActorValue, 18> Skills;
-    static std::array<RE::ActorValue, 6> CombatSkills;
-    static std::array<RE::ActorValue, 5> MagicSkills;
-    static std::array<RE::ActorValue, 7> MiscSkills;
-    static bool IsAttribute(RE::ActorValue actorValue);
-    static int GetMaxPoints(RE::ActorValue actorValue);
-    static float GetStepValue(RE::ActorValue actorValue);
+    static void Initialize(const std::string& configPath);
+    static StatProfile GetProfileForActor(RE::Actor* actor);
+    static bool IsAttribute(RE::Actor* actor, RE::ActorValue actorValue);
+    static int GetMaxPoints(RE::Actor* actor, RE::ActorValue actorValue);
+    static float GetStepValue(RE::Actor* actor, RE::ActorValue actorValue);
     static float GetBaseValue(RE::Actor* actor, RE::ActorValue actorValue);
+
+private:
+    static std::unordered_map<std::string, StatProfile> TagProfiles;
+    static std::unordered_map<std::string, StatProfile> RaceProfiles;
+    static StatProfile DefaultHumanoidProfile;
+    static std::string ToLowercase(std::string_view str);
 };

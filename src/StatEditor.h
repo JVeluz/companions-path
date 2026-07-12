@@ -20,6 +20,8 @@ public:
     
     static bool HasPointsLeft(RE::Actor *actor, RE::ActorValue actorValue);
 
+    static float GetStat(RE::Actor *actor, RE::ActorValue actorValue);
+
     static void AddPoint(RE::Actor *actor, RE::ActorValue actorValue);
     static void RemovePoint(RE::Actor *actor, RE::ActorValue actorValue);
     

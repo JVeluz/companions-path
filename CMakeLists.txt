@@ -43,6 +43,7 @@ find_package(CommonLibSSE CONFIG REQUIRED)
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     src/plugin.cpp
     src/SKSEMenuFramework.h
+    src/json.hpp
     src/Utils.h
     src/Utils.cpp
     src/Menu.h
@@ -53,6 +54,8 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES
     src/StatEditor.cpp
     src/Data.h
     src/Data.cpp
+    src/ConfigParser.h
+    src/ConfigParser.cpp
     src/LevelUpEventSink.h
     src/LevelUpEventSink.cpp
 ) # <--- specifies plugin.cpp

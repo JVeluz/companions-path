@@ -13,6 +13,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message)
     }
     else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         LevelUpEventSink::GetSingleton()->Register();
+        Stats::Initialize("Data/SKSE/Plugins/CompanionsPath/config.json");
     }
 }
 

@@ -5,65 +5,67 @@ int Menu::selectedCompanionIndex = 0;
 
 static const char* GetActorValueName(RE::ActorValue actorValue) {
     switch (actorValue) {
-        case RE::ActorValue::kHealth:      return "Health";
-        case RE::ActorValue::kMagicka:     return "Magicka";
-        case RE::ActorValue::kStamina:     return "Stamina";
+        case RE::ActorValue::kHealth:        return "Health";
+        case RE::ActorValue::kMagicka:       return "Magicka";
+        case RE::ActorValue::kStamina:       return "Stamina";
         
-        case RE::ActorValue::kOneHanded:   return "One-Handed";
-        case RE::ActorValue::kTwoHanded:   return "Two-Handed";
-        case RE::ActorValue::kBlock:       return "Block";
-        case RE::ActorValue::kHeavyArmor:  return "Heavy Armor";
-        case RE::ActorValue::kLightArmor:  return "Light Armor";
-        case RE::ActorValue::kArchery:     return "Archery";
+        case RE::ActorValue::kUnarmedDamage: return "Unarmed Damage";
+        case RE::ActorValue::kDamageResist:  return "Damage Resist";
         
-        case RE::ActorValue::kDestruction: return "Destruction";
-        case RE::ActorValue::kRestoration: return "Restoration";
-        case RE::ActorValue::kAlteration:  return "Alteration";
-        case RE::ActorValue::kConjuration: return "Conjuration";
-        case RE::ActorValue::kIllusion:    return "Illusion";
+        case RE::ActorValue::kOneHanded:     return "One-Handed";
+        case RE::ActorValue::kTwoHanded:     return "Two-Handed";
+        case RE::ActorValue::kBlock:         return "Block";
+        case RE::ActorValue::kHeavyArmor:    return "Heavy Armor";
+        case RE::ActorValue::kLightArmor:    return "Light Armor";
+        case RE::ActorValue::kArchery:       return "Archery";
         
-        case RE::ActorValue::kSneak:       return "Sneak";
-        case RE::ActorValue::kLockpicking: return "Lockpicking";
-        case RE::ActorValue::kPickpocket:  return "Pickpocket";
-        case RE::ActorValue::kSpeech:      return "Speech";
-        case RE::ActorValue::kAlchemy:     return "Alchemy";
-        case RE::ActorValue::kSmithing:    return "Smithing";
-        case RE::ActorValue::kEnchanting:  return "Enchanting";
+        case RE::ActorValue::kDestruction:   return "Destruction";
+        case RE::ActorValue::kRestoration:   return "Restoration";
+        case RE::ActorValue::kAlteration:    return "Alteration";
+        case RE::ActorValue::kConjuration:   return "Conjuration";
+        case RE::ActorValue::kIllusion:      return "Illusion";
         
-        default:                           return "Unknown";
+        case RE::ActorValue::kSneak:         return "Sneak";
+        case RE::ActorValue::kLockpicking:   return "Lockpicking";
+        case RE::ActorValue::kPickpocket:    return "Pickpocket";
+        case RE::ActorValue::kSpeech:        return "Speech";
+        case RE::ActorValue::kAlchemy:       return "Alchemy";
+        case RE::ActorValue::kSmithing:      return "Smithing";
+        case RE::ActorValue::kEnchanting:    return "Enchanting";
+        
+        default:                             return "Unknown";
     }
 }
 
-static void RenderStatRow(RE::Actor *selectedActor, RE::ActorValue actorValue)
+static void RenderStatRow(RE::Actor *actor, RE::ActorValue actorValue)
 {
     const char* name = GetActorValueName(actorValue);
 
     ImGuiMCP::PushID(name);
 
-    auto owner = selectedActor->AsActorValueOwner();
-    float value = owner->GetBaseActorValue(actorValue);
+    float value = StatEditor::GetStat(actor, actorValue);
 
     if (ImGuiMCP::SmallButton(" << ")) {
         for(int i = 0; i < 5; ++i) 
-            StatEditor::RemovePoint(selectedActor, actorValue);
+            StatEditor::RemovePoint(actor, actorValue);
     }
     ImGuiMCP::SameLine();
     
     if (ImGuiMCP::SmallButton(" - ")) {
-        StatEditor::RemovePoint(selectedActor, actorValue);
+        StatEditor::RemovePoint(actor, actorValue);
     }
     
     ImGuiMCP::SameLine();
     
     if (ImGuiMCP::SmallButton(" + ")) {
-        StatEditor::AddPoint(selectedActor, actorValue);
+        StatEditor::AddPoint(actor, actorValue);
     }
     
     ImGuiMCP::SameLine();
 
     if (ImGuiMCP::SmallButton(" >> ")) {
         for(int i = 0; i < 5; ++i) 
-            StatEditor::AddPoint(selectedActor, actorValue);
+            StatEditor::AddPoint(actor, actorValue);
     }
 
     ImGuiMCP::SameLine();
@@ -104,6 +106,12 @@ void Menu::Render()
         selectedCompanionIndex = 0;
     }
 
+    ImGuiMCP::SameLine();
+    if (ImGuiMCP::Button("Reload Config (JSON)")) {
+        Stats::Initialize("Data/SKSE/Plugins/CompanionsPath/config.json");
+        StatEditor::Harmonize();
+    }
+
     ImGuiMCP::Separator();
     
     if (currentFollowers.empty()) return;
@@ -116,6 +124,7 @@ void Menu::Render()
     }
     
     auto selectedActor = selectedActorNiPtr.get();
+    auto profile = Stats::GetProfileForActor(selectedActor);
 
     int remainingAttributePoints = StatEditor::GetRemainingAttributePoints(selectedActor);
     int remainingSkillPoints = StatEditor::GetRemainingSkillPoints(selectedActor);
@@ -134,13 +143,10 @@ void Menu::Render()
 
     ImGuiMCP::Columns(3, "AttributesColumns", false);
     
-    RenderStatRow(selectedActor, RE::ActorValue::kHealth);
-    ImGuiMCP::NextColumn();
-    
-    RenderStatRow(selectedActor, RE::ActorValue::kMagicka);
-    ImGuiMCP::NextColumn();
-
-    RenderStatRow(selectedActor, RE::ActorValue::kStamina);
+    for (const auto& attr : profile.Attributes) {
+        RenderStatRow(selectedActor, attr);
+        ImGuiMCP::NextColumn();
+    }
 
     ImGuiMCP::Columns(1); 
 
@@ -153,28 +159,14 @@ void Menu::Render()
     ImGuiMCP::Separator();
     ImGuiMCP::Spacing();
 
+    ImGuiMCP::Text("Skills");
+    ImGuiMCP::Spacing();
+    
     ImGuiMCP::Columns(3, "StatsColumns", false);
 
-    ImGuiMCP::Text("Combat");
-    ImGuiMCP::Spacing();
-    for (const auto& skill : Stats::CombatSkills) {
+    for (const auto& skill : profile.Skills) {
         RenderStatRow(selectedActor, skill);
-    }
-
-    ImGuiMCP::NextColumn();
-
-    ImGuiMCP::Text("Magic");
-    ImGuiMCP::Spacing();
-    for (const auto& skill : Stats::MagicSkills) {
-        RenderStatRow(selectedActor, skill);
-    }
-
-    ImGuiMCP::NextColumn();
-
-    ImGuiMCP::Text("Miscellaneous");
-    ImGuiMCP::Spacing();
-    for (const auto& skill : Stats::MiscSkills) {
-        RenderStatRow(selectedActor, skill);
+        ImGuiMCP::NextColumn();
     }
 
     ImGuiMCP::Columns(1); 
