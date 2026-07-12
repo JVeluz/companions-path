@@ -108,7 +108,7 @@ void Menu::Render()
     }
 
     ImGuiMCP::SameLine();
-    if (ImGuiMCP::Button("Reload Config (JSON)")) {
+    if (ImGuiMCP::Button("Reload Config")) {
         Stats::Initialize("Data/SKSE/Plugins/CompanionsPath/config.json");
         StatEditor::Harmonize();
     }
