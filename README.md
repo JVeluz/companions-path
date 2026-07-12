@@ -10,15 +10,11 @@
 * **Creature Companion Support:** Fully supports non-humanoid followers via keyword tags. Creatures can be configured to use alternative skills like *Unarmed Damage* and *Damage Resist* instead of standard weapon and armor skills.
 * **Hot-Reloadable Configuration:** Tweak starting stats and racial bonuses in a straightforward JSON file and reload them directly from the in-game menu without restarting Skyrim.
 
----
-
 ## 📋 Requirements
 
 * **Skyrim Special Edition / Anniversary Edition**
 * **SKSE64** (Skyrim Script Extender)
 * **Dear ImGui for Skyrim** (or the specific ImGui/Menu Framework required by `ImGuiMCP` / `SKSEMenuFramework`)
-
----
 
 ## 🎮 How to Use
 
@@ -28,8 +24,6 @@
 * **Skills:** Each point spent increases the skill by **1**.
 
 4. **Reset:** Made a mistake? Use the "Reset Attributes" or "Reset All Skills" buttons to refund your spent points.
-
----
 
 ## ⚙️ Configuration (`config.json`)
 
@@ -59,8 +53,6 @@ The mod relies on `Data/SKSE/Plugins/CompanionsPath/config.json` to define base 
 *If an actor has the "Creature" or "ActorTypeCreature" keyword, the menu will automatically swap out standard humanoid skills (like Archery or Lockpicking) for Unarmed Damage and Damage Resist.*
 
 > **Tip:** You can edit `config.json` while the game is running. Simply click the **"Reload Config (JSON)"** button in the mod menu to instantly apply your changes to your followers.
-
----
 
 ## 🛠️ Technical Details for Modders
 
