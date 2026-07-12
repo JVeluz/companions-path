@@ -1,8 +1,18 @@
+#pragma once
+
+#include <algorithm>
+#include <array>
+#include <vector>
+#include <span>
+
+#include "Stats.h"
+#include "Data.h"
+
 class StatEditor
 {
 public:
-    static int GetMaxAttributePoints(RE::Actor *actor);
-    static int GetMaxSkillPoints(RE::Actor *actor);
+    static int GetTotalAttributePoints(RE::Actor *actor);
+    static int GetTotalSkillPoints(RE::Actor *actor);
     
     static int GetRemainingAttributePoints(RE::Actor *actor);
     static int GetRemainingSkillPoints(RE::Actor *actor);
@@ -15,4 +25,6 @@ public:
     
     static void ResetAttributes(RE::Actor *actor);
     static void ResetSkills(RE::Actor *actor);
+
+    static void Harmonize();
 };

@@ -43,12 +43,16 @@ find_package(CommonLibSSE CONFIG REQUIRED)
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES 
     src/plugin.cpp
     src/SKSEMenuFramework.h
-    src/CompanionMenu.h
-    src/CompanionMenu.cpp
+    src/Menu.h
+    src/Menu.cpp
     src/Stats.h
     src/Stats.cpp
     src/StatEditor.h
     src/StatEditor.cpp
+    src/Data.h
+    src/Data.cpp
+    src/LevelUpEventSink.h
+    src/LevelUpEventSink.cpp
 ) # <--- specifies plugin.cpp
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
