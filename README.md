@@ -1,60 +1,58 @@
-# Companions' Path
+# Technical Architecture
 
-**Companions' Path** is an SKSE plugin that allows you to take complete control over your followers' progression. Instead of relying on auto-leveling, this mod introduces a custom in-game UI where you can manually allocate Attribute and Skill points for your active companions as they level up, just like you do for your own character.
+This document outlines the internal architecture of **Companions' Path**. The mod is structured with a clear separation of concerns, ensuring that the UI, the core logic, data persistence, and Skyrim engine interactions remain decoupled.
 
-## 🌟 Key Features
+## 🏗️ Core Modules
 
-* **Manual Stat Allocation:** Distribute points into Attributes (Health, Magicka, Stamina) and Skills (One-Handed, Destruction, Sneak, etc.) for any active follower.
-* **Level-Based Progression:** Companions earn **1 Attribute point** and **5 Skill points** per level.
-* **Dynamic Race & Tag Support:** Automatically applies distinct starting bonuses based on a follower's race (e.g., High Elves get +50 base Magicka, Orcs get Heavy Armor bonuses).
-* **Creature Companion Support:** Fully supports non-humanoid followers via keyword tags. Creatures can be configured to use alternative skills like *Unarmed Damage* and *Damage Resist* instead of standard weapon and armor skills.
-* **Hot-Reloadable Configuration:** Tweak starting stats and racial bonuses in a straightforward JSON file and reload them directly from the in-game menu without restarting Skyrim.
+The codebase is divided into five main layers. The general flow of dependency is strictly one-way: **UI -> Logic -> Data & Engine**.
 
-## 📋 Requirements
+### 1. `Menu` (Frontend / UI)
+* **Responsibility:** Renders the ImGui interface. It handles user inputs (button clicks, dropdown selections).
+* **Call Direction:** It **reads** from `Stats` and **calls** `StatEditor` to perform any mutations. It *never* directly modifies Skyrim actor values.
 
-* **Skyrim Special Edition / Anniversary Edition**
-* **SKSE64** (Skyrim Script Extender)
-* **Dear ImGui for Skyrim** (or the specific ImGui/Menu Framework required by `ImGuiMCP` / `SKSEMenuFramework`)
+### 2. `StatEditor` (Core Logic)
+* **Responsibility:** The central mediator. It enforces the rules (e.g., checking if the actor has enough points left).
+* **Call Direction:** 
+  * Receives commands from `Menu`.
+  * Fetches step/base values from `Stats`.
+  * Commits "spent points" to `Data`.
+  * Pushes the final computed values directly to the **Skyrim Engine** (`SetBaseActorValue` or `RestoreActorValue`).
 
-## 🎮 How to Use
+### 3. `Stats` & `ConfigParser` (Configuration)
+* **Responsibility:** `ConfigParser` reads the `config.json` at startup. `Stats` holds these parsed `StatProfile` objects in memory and determines which profile applies to a given `RE::Actor` based on their Race or Keywords.
+* **Call Direction:** Read-only reference class. Queried by `Menu` and `StatEditor`.
 
-1. **Access the Menu:** Open the mod's interface via the "Companions' Path" section in your ImGui menu overlay (F1).
-2. **Select a Follower:** Choose from your currently active followers using the dropdown menu. If a follower is missing, click **Refresh Followers**.
-3. **Allocate Points:** * **Attributes:** Each point spent increases the attribute (Health/Magicka/Stamina) by **10**.
-* **Skills:** Each point spent increases the skill by **1**.
+### 4. `Data` (Persistence)
+* **Responsibility:** SKSE Co-save serialization. 
+* **Important Note:** We do *not* save the absolute stat values. We only save the **number of points spent** (integers) by the player per `ActorValue` per `FormID`. The actual float values are recalculated dynamically to ensure safe uninstallation or config tweaks.
+* **Call Direction:** Handles SKSE serialization callbacks (`SaveCallback`, `LoadCallback`). Modified only by `StatEditor`.
 
-4. **Reset:** Made a mistake? Use the "Reset Attributes" or "Reset All Skills" buttons to refund your spent points.
+### 5. `LevelUpEventSink` (Event Listeners)
+* **Responsibility:** Hooks into Skyrim's UI events.
+* **Call Direction:** Listens for the vanilla `StatsMenu` closing, then calls `StatEditor::Harmonize()` to automatically recalculate follower point caps when the player levels up.
 
-## ⚙️ Configuration (`config.json`)
+## 🔄 Call Flow Examples
 
-The mod relies on `Data/SKSE/Plugins/CompanionsPath/config.json` to define base starting stats, racial bonuses, and custom skill profiles.
+Here is the step-by-step execution flow for common actions.
 
-### Understanding the JSON Structure
+### Action: The player clicks the "+" button to increase Health
+1. `Menu::Render()` detects a click on the "+" button.
+2. ➔ Calls `StatEditor::AddPoint(actor, kHealth)`.
+3. ➔ `StatEditor` queries `HasPointsLeft()` to validate the transaction.
+4. ➔ `StatEditor` gets the current spent points from `Data::GetStat()`.
+5. ➔ `StatEditor` calculates the new actual health value using `Stats::GetBaseValue` and `Stats::GetStepValue`.
+6. ➔ `StatEditor` applies the new health to the game engine: `ApplyStatToEngine()`.
+7. ➔ `StatEditor` saves the new spent point total: `Data::SetStat()`.
 
-* **`Races`**: Defines base stat overrides for specific races. For example, setting a Nord's base `kTwoHanded` to 25.0, simulating vanilla racial starting bonuses.
-* **`Tags`**: Defines entirely custom stat profiles based on Actor Keywords. This is primarily used for non-humanoids.
+### Action: The player closes the Vanilla Level-Up Menu
+1. `LevelUpEventSink` detects `MenuOpenCloseEvent` for `StatsMenu` (closing).
+2. ➔ Calls `StatEditor::Harmonize()`.
+3. ➔ `StatEditor` calls `Utils::GetActiveFollowers()`.
+4. ➔ For each follower, it fetches their profile (`Stats::GetProfileForActor()`).
+5. ➔ It forces a recalculation and engine update for all stats based on the points currently saved in `Data`.
 
-**Example: Creature Profile**
-
-```json
-"Creature": {
-  "Attributes": ["kHealth", "kStamina"],
-  "Skills": ["kUnarmedDamage", "kDamageResist"],
-  "BaseValues": {
-    "kHealth": 100.0,
-    "kStamina": 100.0,
-    "kUnarmedDamage": 15.0,
-    "kDamageResist": 15.0
-  }
-}
-
-```
-
-*If an actor has the "Creature" or "ActorTypeCreature" keyword, the menu will automatically swap out standard humanoid skills (like Archery or Lockpicking) for Unarmed Damage and Damage Resist.*
-
-> **Tip:** You can edit `config.json` while the game is running. Simply click the **"Reload Config (JSON)"** button in the mod menu to instantly apply your changes to your followers.
-
-## 🛠️ Technical Details for Modders
-
-* **Stat Application:** The mod uses `SetBaseActorValue` for standard skills and `RestoreActorValue` with `kPermanent` modifiers for calculated stats (like Damage Resist or Unarmed Damage) to ensure compatibility with game engine mechanics.
-* **Event Sinks:** The plugin hooks into `RE::StatsMenu` via a `MenuOpenCloseEvent`. When the player finishes leveling up and closes the menu, the mod automatically harmonizes follower stats, recalculating max points based on their new level.
+### Action: The player clicks "Reload Config (JSON)"
+1. `Menu` detects the click.
+2. ➔ Calls `Stats::Initialize(".../config.json")`.
+3. ➔ `Stats` clears old profiles and calls `ConfigParser::Load()`.
+4. ➔ `Menu` calls `StatEditor::Harmonize()` to immediately apply any base stat changes to currently loaded followers.
