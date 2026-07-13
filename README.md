@@ -1,58 +1,41 @@
-# Technical Architecture
+## If you want to create a mod based on this project you should:
 
-This document outlines the internal architecture of **Companions' Path**. The mod is structured with a clear separation of concerns, ensuring that the UI, the core logic, data persistence, and Skyrim engine interactions remain decoupled.
+Modify CMakeLists.txt with your name and the name of your mod
+```cmake
+set(AUTHOR_NAME "AuthorName")
+set(PRODUCT_NAME "SKSEMenuFrameworkExample")
+set(BEAUTIFUL_NAME "SKSE Menu Framework Example")
+```
 
-## 🏗️ Core Modules
+Delete the LICENCE file and use git to create the licence you want your mod to be
+<img width="572" height="292" alt="image" src="https://github.com/user-attachments/assets/80cd698b-a4ac-499d-9de3-07d261682604" />
+<img width="499" height="182" alt="image" src="https://github.com/user-attachments/assets/2cb7e4c8-edd6-4b24-91d8-074d2701c951" />
 
-The codebase is divided into five main layers. The general flow of dependency is strictly one-way: **UI -> Logic -> Data & Engine**.
+Update the cmake/version.rc.in with your licence (This licence will go into the dll)
 
-### 1. `Menu` (Frontend / UI)
-* **Responsibility:** Renders the ImGui interface. It handles user inputs (button clicks, dropdown selections).
-* **Call Direction:** It **reads** from `Stats` and **calls** `StatEditor` to perform any mutations. It *never* directly modifies Skyrim actor values.
+## Environment variables
 
-### 2. `StatEditor` (Core Logic)
-* **Responsibility:** The central mediator. It enforces the rules (e.g., checking if the actor has enough points left).
-* **Call Direction:** 
-  * Receives commands from `Menu`.
-  * Fetches step/base values from `Stats`.
-  * Commits "spent points" to `Data`.
-  * Pushes the final computed values directly to the **Skyrim Engine** (`SetBaseActorValue` or `RestoreActorValue`).
+[How to set up envioriment variables](https://gist.github.com/Thiago099/b45ec7832fb754325b29a61006bcd10c)
 
-### 3. `Stats` & `ConfigParser` (Configuration)
-* **Responsibility:** `ConfigParser` reads the `config.json` at startup. `Stats` holds these parsed `StatProfile` objects in memory and determines which profile applies to a given `RE::Actor` based on their Race or Keywords.
-* **Call Direction:** Read-only reference class. Queried by `Menu` and `StatEditor`.
+COMMONLIB_SSE_FOLDER
 
-### 4. `Data` (Persistence)
-* **Responsibility:** SKSE Co-save serialization. 
-* **Important Note:** We do *not* save the absolute stat values. We only save the **number of points spent** (integers) by the player per `ActorValue` per `FormID`. The actual float values are recalculated dynamically to ensure safe uninstallation or config tweaks.
-* **Call Direction:** Handles SKSE serialization callbacks (`SaveCallback`, `LoadCallback`). Modified only by `StatEditor`.
+Clone this Repository, to somewhere safe and adds its path to this environment variable on Windows.
 
-### 5. `LevelUpEventSink` (Event Listeners)
-* **Responsibility:** Hooks into Skyrim's UI events.
-* **Call Direction:** Listens for the vanilla `StatsMenu` closing, then calls `StatEditor::Harmonize()` to automatically recalculate follower point caps when the player levels up.
+```bash
+git clone --recursive https://github.com/alandtse/CommonLibVR
+cd CommonLibVR
+git checkout ng
+```
+  
+## Optional ouput folder optional variables
 
-## 🔄 Call Flow Examples
+- SKYRIM_FOLDER
+- WILDLANDER_OWRT_FOLDER
+- SKYRIM_OWRT_FOLDER
+- SKYRIM_MODS_FOLDER2
+- SKYRIM_MODS_FOLDER
 
-Here is the step-by-step execution flow for common actions.
 
-### Action: The player clicks the "+" button to increase Health
-1. `Menu::Render()` detects a click on the "+" button.
-2. ➔ Calls `StatEditor::AddPoint(actor, kHealth)`.
-3. ➔ `StatEditor` queries `HasPointsLeft()` to validate the transaction.
-4. ➔ `StatEditor` gets the current spent points from `Data::GetStat()`.
-5. ➔ `StatEditor` calculates the new actual health value using `Stats::GetBaseValue` and `Stats::GetStepValue`.
-6. ➔ `StatEditor` applies the new health to the game engine: `ApplyStatToEngine()`.
-7. ➔ `StatEditor` saves the new spent point total: `Data::SetStat()`.
+## Description of the new features
 
-### Action: The player closes the Vanilla Level-Up Menu
-1. `LevelUpEventSink` detects `MenuOpenCloseEvent` for `StatsMenu` (closing).
-2. ➔ Calls `StatEditor::Harmonize()`.
-3. ➔ `StatEditor` calls `Utils::GetActiveFollowers()`.
-4. ➔ For each follower, it fetches their profile (`Stats::GetProfileForActor()`).
-5. ➔ It forces a recalculation and engine update for all stats based on the points currently saved in `Data`.
-
-### Action: The player clicks "Reload Config (JSON)"
-1. `Menu` detects the click.
-2. ➔ Calls `Stats::Initialize(".../config.json")`.
-3. ➔ `Stats` clears old profiles and calls `ConfigParser::Load()`.
-4. ➔ `Menu` calls `StatEditor::Harmonize()` to immediately apply any base stat changes to currently loaded followers.
+https://github.com/QTR-Modding/SKSE-Menu-Framework-3/blob/master/README.md

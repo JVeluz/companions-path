@@ -1,0 +1,128 @@
+{
+  "Tags": {
+    "Creature": {
+      "Attributes": [
+        "kHealth",
+        "kStamina"
+      ],
+      "Skills": [
+        "kUnarmedDamage",
+        "kDamageResist"
+      ],
+      "BaseValues": {
+        "kHealth": 100.0,
+        "kMagicka": 0.0,
+        "kStamina": 100.0
+      }
+    }
+  },
+  "Races": {
+    "Argonian": {
+      "BaseValues": {
+        "kLockpicking": 25.0,
+        "kAlteration": 20.0,
+        "kLightArmor": 20.0,
+        "kPickpocket": 20.0,
+        "kRestoration": 20.0,
+        "kSneak": 20.0
+      }
+    },
+    "Breton": {
+      "BaseValues": {
+        "kConjuration": 25.0,
+        "kAlchemy": 20.0,
+        "kAlteration": 20.0,
+        "kIllusion": 20.0,
+        "kRestoration": 20.0,
+        "kSpeech": 20.0
+      }
+    },
+    "DarkElf": {
+      "BaseValues": {
+        "kDestruction": 25.0,
+        "kAlchemy": 20.0,
+        "kAlteration": 20.0,
+        "kIllusion": 20.0,
+        "kLightArmor": 20.0,
+        "kSneak": 20.0
+      }
+    },
+    "HighElf": {
+      "BaseValues": {
+        "kMagicka": 150.0,
+        "kIllusion": 25.0,
+        "kAlteration": 20.0,
+        "kConjuration": 20.0,
+        "kDestruction": 20.0,
+        "kEnchanting": 20.0,
+        "kRestoration": 20.0
+      }
+    },
+    "Imperial": {
+      "BaseValues": {
+        "kRestoration": 25.0,
+        "kBlock": 20.0,
+        "kDestruction": 20.0,
+        "kEnchanting": 20.0,
+        "kHeavyArmor": 20.0,
+        "kOneHanded": 20.0
+      }
+    },
+    "Khajiit": {
+      "BaseValues": {
+        "kSneak": 25.0,
+        "kAlchemy": 20.0,
+        "kArchery": 20.0,
+        "kLockpicking": 20.0,
+        "kPickpocket": 20.0,
+        "kOneHanded": 20.0
+      }
+    },
+    "Nord": {
+      "BaseValues": {
+        "kTwoHanded": 25.0,
+        "kBlock": 20.0,
+        "kLightArmor": 20.0,
+        "kOneHanded": 20.0,
+        "kSmithing": 20.0,
+        "kSpeech": 20.0
+      }
+    },
+    "Orc": {
+      "BaseValues": {
+        "kHeavyArmor": 25.0,
+        "kBlock": 20.0,
+        "kEnchanting": 20.0,
+        "kOneHanded": 20.0,
+        "kSmithing": 20.0,
+        "kTwoHanded": 20.0
+      }
+    },
+    "Redguard": {
+      "BaseValues": {
+        "kOneHanded": 25.0,
+        "kAlteration": 20.0,
+        "kArchery": 20.0,
+        "kBlock": 20.0,
+        "kDestruction": 20.0,
+        "kSmithing": 20.0
+      }
+    },
+    "WoodElf": {
+      "BaseValues": {
+        "kArchery": 25.0,
+        "kAlchemy": 20.0,
+        "kLightArmor": 20.0,
+        "kLockpicking": 20.0,
+        "kPickpocket": 20.0,
+        "kSneak": 20.0
+      }
+    },
+    "Troll": {
+      "BaseValues": {
+        "kHealth": 250.0,
+        "kStamina": 150.0
+      }
+    }
+  }
+}
