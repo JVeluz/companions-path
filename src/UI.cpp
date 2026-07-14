@@ -52,6 +52,8 @@ namespace {
 
         float value = StatManager::GetStatValue(actor, actorValue);
 
+        ImGuiMCP::Text("%3.0f %s", value, name);
+
         if (ImGuiMCP::SmallButton(" << ")) {
             for(int i = 0; i < 5; ++i) 
                 StatManager::RemovePoint(actor, actorValue);
@@ -75,18 +77,16 @@ namespace {
                 StatManager::AddPoint(actor, actorValue);
         }
 
-        ImGuiMCP::SameLine();
-
-        ImGuiMCP::Text(" %3.0f  %s", value, name);
-
         ImGuiMCP::PopID();
     }
 }
 
 namespace UI {
     void Register() {
-        SKSEMenuFramework::SetSection("Companions' Path"); 
-        SKSEMenuFramework::AddSectionItem("Stats", UI::Stats::Render); 
+        if (SKSEMenuFramework::IsInstalled()) {
+            SKSEMenuFramework::SetSection("Companions' Path"); 
+            SKSEMenuFramework::AddSectionItem("Stats", UI::Stats::Render); 
+        }
     }
 
     namespace Stats {
@@ -121,10 +121,14 @@ namespace UI {
                 StatManager::Harmonize();
             }
 
-            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
             
-            if (currentFollowers.empty()) return;
-            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= currentFollowers.size()) return;
+            if (currentFollowers.empty()) 
+                return;
+            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= currentFollowers.size()) 
+                return;
 
             auto selectedActorNiPtr = currentFollowers[selectedCompanionIndex].get();
             if (!selectedActorNiPtr) {
@@ -141,50 +145,57 @@ namespace UI {
             int maxSkillPoints = StatRules::GetTotalSkillPoints(selectedActor);
 
             ImGuiMCP::Text("Level : %d", selectedActor->GetLevel());
-            ImGuiMCP::Text("Attribute Points: %d / %d", remainingAttributePoints, maxAttributePoints);
-            ImGuiMCP::Text("Skill Points:     %d / %d", remainingSkillPoints, maxSkillPoints);
             
             ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
-
-            ImGuiMCP::Text("Attributes");
-
+            ImGuiMCP::Spacing();
+            
+            ImGuiMCP::Text("Attributes (%d / %d)", remainingAttributePoints, maxAttributePoints);
+            ImGuiMCP::Spacing();
+            
             ImGuiMCP::Columns(3, "AttributesColumns", false);
             
             for (const auto& attr : profile.Attributes) {
                 RenderStatRow(selectedActor, attr);
                 ImGuiMCP::NextColumn();
             }
-
+            
             ImGuiMCP::Columns(1); 
-
+            
             ImGuiMCP::Spacing();
-            if (ImGuiMCP::Button("Reset Attributes")) {
-                StatManager::ResetAttributes(selectedActor);
-            }
-
             ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
-
-            ImGuiMCP::Text("Skills");
+            
+            ImGuiMCP::Text("Skills (%d / %d)", remainingSkillPoints, maxSkillPoints);
             ImGuiMCP::Spacing();
             
             ImGuiMCP::Columns(3, "StatsColumns", false);
-
+            
             for (const auto& skill : profile.Skills) {
                 RenderStatRow(selectedActor, skill);
+                ImGuiMCP::Spacing();
+                ImGuiMCP::Spacing();
+                ImGuiMCP::Spacing();
                 ImGuiMCP::NextColumn();
             }
 
             ImGuiMCP::Columns(1); 
 
             ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
+
+            if (ImGuiMCP::Button("Reset Attributes")) {
+                StatManager::ResetAttributes(selectedActor);
+            }
+    
+            ImGuiMCP::SameLine();
             
-            if (ImGuiMCP::Button("Reset All Skills", ImGuiMCP::ImVec2(-1, 0))) {
+            if (ImGuiMCP::Button("Reset All Skills")) {
                 StatManager::ResetSkills(selectedActor);
             }
         }
