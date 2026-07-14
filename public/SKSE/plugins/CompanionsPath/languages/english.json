@@ -1,0 +1,45 @@
+{
+  "STAT_HEALTH": "Health",
+  "STAT_MAGICKA": "Magicka",
+  "STAT_STAMINA": "Stamina",
+  
+  "STAT_UNARMED_DAMAGE": "Unarmed Damage",
+  "STAT_DAMAGE_RESIST": "Damage Resist",
+  
+  "STAT_ONE_HANDED": "One-Handed",
+  "STAT_TWO_HANDED": "Two-Handed",
+  "STAT_BLOCK": "Block",
+  "STAT_HEAVY_ARMOR": "Heavy Armor",
+  "STAT_LIGHT_ARMOR": "Light Armor",
+  "STAT_ARCHERY": "Archery",
+  
+  "STAT_DESTRUCTION": "Destruction",
+  "STAT_RESTORATION": "Restoration",
+  "STAT_ALTERATION": "Alteration",
+  "STAT_CONJURATION": "Conjuration",
+  "STAT_ILLUSION": "Illusion",
+  
+  "STAT_SNEAK": "Sneak",
+  "STAT_LOCKPICKING": "Lockpicking",
+  "STAT_PICKPOCKET": "Pickpocket",
+  "STAT_SPEECH": "Speech",
+  "STAT_ALCHEMY": "Alchemy",
+  "STAT_SMITHING": "Smithing",
+  "STAT_ENCHANTING": "Enchanting",
+  
+  "STAT_UNKNOWN": "Unknown",
+  
+  "UI_TAB_STATS": "Stats",
+  "UI_NO_FOLLOWER": "No active follower.",
+  "UI_UNKNOWN_UNLOADED": "Unknown (Unloaded)",
+  "UI_REFRESH_FOLLOWERS": "Refresh Followers",
+  "UI_RELOAD_CONFIG": "Reload Config",
+  "UI_ACTOR_INVALID": "Actor is currently unloaded or invalid.",
+  
+  "UI_LEVEL": "Level : %d",
+  "UI_ATTRIBUTES": "Attributes (%d / %d)",
+  "UI_SKILLS": "Skills (%d / %d)",
+  
+  "UI_RESET_ATTRIBUTES": "Reset Attributes",
+  "UI_RESET_SKILLS": "Reset All Skills"
+}

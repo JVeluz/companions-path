@@ -1,5 +1,7 @@
 #pragma once
 
+#include "json.hpp"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -14,6 +16,6 @@ struct Profile {
 };
 
 namespace ProfileRepository {
-    void Initialize(const std::string& configPath);
+    void InitializeFromJson(const nlohmann::json& config);
     Profile GetProfileForActor(RE::Actor* actor);
 }

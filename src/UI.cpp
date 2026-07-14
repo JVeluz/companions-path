@@ -1,11 +1,14 @@
 ﻿#include "UI.h"
 
-#include <vector>
-
+#include "Utils.h"
 #include "StatManager.h"
 #include "StatRules.h"
 #include "ProfileRepository.h"
-#include "Utils.h"
+#include "LanguageRepository.h"
+#include "ConfigManager.h"
+
+#include <vector>
+#include <string>
 
 namespace {
     std::vector<RE::ActorHandle> currentFollowers;
@@ -13,35 +16,35 @@ namespace {
 
     const char* GetActorValueName(RE::ActorValue actorValue) {
         switch (actorValue) {
-            case RE::ActorValue::kHealth:        return "Health";
-            case RE::ActorValue::kMagicka:       return "Magicka";
-            case RE::ActorValue::kStamina:       return "Stamina";
+            case RE::ActorValue::kHealth:        return LanguageRepository::GetString("STAT_HEALTH");
+            case RE::ActorValue::kMagicka:       return LanguageRepository::GetString("STAT_MAGICKA");
+            case RE::ActorValue::kStamina:       return LanguageRepository::GetString("STAT_STAMINA");
             
-            case RE::ActorValue::kUnarmedDamage: return "Unarmed Damage";
-            case RE::ActorValue::kDamageResist:  return "Damage Resist";
+            case RE::ActorValue::kUnarmedDamage: return LanguageRepository::GetString("STAT_UNARMED_DAMAGE");
+            case RE::ActorValue::kDamageResist:  return LanguageRepository::GetString("STAT_DAMAGE_RESIST");
             
-            case RE::ActorValue::kOneHanded:     return "One-Handed";
-            case RE::ActorValue::kTwoHanded:     return "Two-Handed";
-            case RE::ActorValue::kBlock:         return "Block";
-            case RE::ActorValue::kHeavyArmor:    return "Heavy Armor";
-            case RE::ActorValue::kLightArmor:    return "Light Armor";
-            case RE::ActorValue::kArchery:       return "Archery";
+            case RE::ActorValue::kOneHanded:     return LanguageRepository::GetString("STAT_ONE_HANDED");
+            case RE::ActorValue::kTwoHanded:     return LanguageRepository::GetString("STAT_TWO_HANDED");
+            case RE::ActorValue::kBlock:         return LanguageRepository::GetString("STAT_BLOCK");
+            case RE::ActorValue::kHeavyArmor:    return LanguageRepository::GetString("STAT_HEAVY_ARMOR");
+            case RE::ActorValue::kLightArmor:    return LanguageRepository::GetString("STAT_LIGHT_ARMOR");
+            case RE::ActorValue::kArchery:       return LanguageRepository::GetString("STAT_ARCHERY");
             
-            case RE::ActorValue::kDestruction:   return "Destruction";
-            case RE::ActorValue::kRestoration:   return "Restoration";
-            case RE::ActorValue::kAlteration:    return "Alteration";
-            case RE::ActorValue::kConjuration:   return "Conjuration";
-            case RE::ActorValue::kIllusion:      return "Illusion";
+            case RE::ActorValue::kDestruction:   return LanguageRepository::GetString("STAT_DESTRUCTION");
+            case RE::ActorValue::kRestoration:   return LanguageRepository::GetString("STAT_RESTORATION");
+            case RE::ActorValue::kAlteration:    return LanguageRepository::GetString("STAT_ALTERATION");
+            case RE::ActorValue::kConjuration:   return LanguageRepository::GetString("STAT_CONJURATION");
+            case RE::ActorValue::kIllusion:      return LanguageRepository::GetString("STAT_ILLUSION");
             
-            case RE::ActorValue::kSneak:         return "Sneak";
-            case RE::ActorValue::kLockpicking:   return "Lockpicking";
-            case RE::ActorValue::kPickpocket:    return "Pickpocket";
-            case RE::ActorValue::kSpeech:        return "Speech";
-            case RE::ActorValue::kAlchemy:       return "Alchemy";
-            case RE::ActorValue::kSmithing:      return "Smithing";
-            case RE::ActorValue::kEnchanting:    return "Enchanting";
+            case RE::ActorValue::kSneak:         return LanguageRepository::GetString("STAT_SNEAK");
+            case RE::ActorValue::kLockpicking:   return LanguageRepository::GetString("STAT_LOCKPICKING");
+            case RE::ActorValue::kPickpocket:    return LanguageRepository::GetString("STAT_PICKPOCKET");
+            case RE::ActorValue::kSpeech:        return LanguageRepository::GetString("STAT_SPEECH");
+            case RE::ActorValue::kAlchemy:       return LanguageRepository::GetString("STAT_ALCHEMY");
+            case RE::ActorValue::kSmithing:      return LanguageRepository::GetString("STAT_SMITHING");
+            case RE::ActorValue::kEnchanting:    return LanguageRepository::GetString("STAT_ENCHANTING");
             
-            default:                             return "Unknown";
+            default:                             return LanguageRepository::GetString("STAT_UNKNOWN");
         }
     }
 
@@ -84,8 +87,9 @@ namespace {
 namespace UI {
     void Register() {
         if (SKSEMenuFramework::IsInstalled()) {
+            static std::string tabStats = LanguageRepository::GetString("UI_TAB_STATS");
             SKSEMenuFramework::SetSection("Companions' Path"); 
-            SKSEMenuFramework::AddSectionItem("Stats", UI::Stats::Render); 
+            SKSEMenuFramework::AddSectionItem(LanguageRepository::GetString("UI_TAB_STATS"), UI::Stats::Render); 
         }
     }
 
@@ -93,7 +97,7 @@ namespace UI {
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
             if (currentFollowers.empty()) {
-                ImGuiMCP::Text("No active follower.");
+                ImGuiMCP::Text("%s", LanguageRepository::GetString("UI_NO_FOLLOWER"));
             } 
             else {
                 std::vector<const char*> names;
@@ -102,22 +106,22 @@ namespace UI {
                     if (actorPtr) {
                         names.push_back(actorPtr->GetName());
                     } else {
-                        names.push_back("Unknown (Unloaded)");
+                        names.push_back(LanguageRepository::GetString("UI_UNKNOWN_UNLOADED"));
                     }
                 }
                 ImGuiMCP::Combo("##Target", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
             }
 
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Refresh Followers")) {
+            if (ImGuiMCP::Button(LanguageRepository::GetString("UI_REFRESH_FOLLOWERS"))) {
                 currentFollowers = Utils::GetActiveFollowers();
                 selectedCompanionIndex = 0;
                 StatManager::Harmonize();
             }
 
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Reload Config")) {
-                ProfileRepository::Initialize("Data/SKSE/Plugins/CompanionsPath/config.json");
+            if (ImGuiMCP::Button(LanguageRepository::GetString("UI_RELOAD_CONFIG"))) {
+                ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
                 StatManager::Harmonize();
             }
 
@@ -132,7 +136,7 @@ namespace UI {
 
             auto selectedActorNiPtr = currentFollowers[selectedCompanionIndex].get();
             if (!selectedActorNiPtr) {
-                ImGuiMCP::Text("Actor is currently unloaded or invalid.");
+                ImGuiMCP::Text("%s", LanguageRepository::GetString("UI_ACTOR_INVALID"));
                 return;
             }
             
@@ -144,13 +148,13 @@ namespace UI {
             int maxAttributePoints = StatRules::GetTotalAttributePoints(selectedActor);
             int maxSkillPoints = StatRules::GetTotalSkillPoints(selectedActor);
 
-            ImGuiMCP::Text("Level : %d", selectedActor->GetLevel());
+            ImGuiMCP::Text(LanguageRepository::GetString("UI_LEVEL"), selectedActor->GetLevel());
             
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();
             
-            ImGuiMCP::Text("Attributes (%d / %d)", remainingAttributePoints, maxAttributePoints);
+            ImGuiMCP::Text(LanguageRepository::GetString("UI_ATTRIBUTES"), remainingAttributePoints, maxAttributePoints);
             ImGuiMCP::Spacing();
             
             ImGuiMCP::Columns(3, "AttributesColumns", false);
@@ -166,7 +170,7 @@ namespace UI {
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();
             
-            ImGuiMCP::Text("Skills (%d / %d)", remainingSkillPoints, maxSkillPoints);
+            ImGuiMCP::Text(LanguageRepository::GetString("UI_SKILLS"), remainingSkillPoints, maxSkillPoints);
             ImGuiMCP::Spacing();
             
             ImGuiMCP::Columns(3, "StatsColumns", false);
@@ -189,13 +193,13 @@ namespace UI {
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();
 
-            if (ImGuiMCP::Button("Reset Attributes")) {
+            if (ImGuiMCP::Button(LanguageRepository::GetString("UI_RESET_ATTRIBUTES"))) {
                 StatManager::ResetAttributes(selectedActor);
             }
     
             ImGuiMCP::SameLine();
             
-            if (ImGuiMCP::Button("Reset All Skills")) {
+            if (ImGuiMCP::Button(LanguageRepository::GetString("UI_RESET_SKILLS"))) {
                 StatManager::ResetSkills(selectedActor);
             }
         }

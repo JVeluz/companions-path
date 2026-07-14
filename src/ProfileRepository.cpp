@@ -78,7 +78,7 @@ namespace {
 
 namespace ProfileRepository {
     
-    void Initialize(const std::string& configPath) {
+    void InitializeFromJson(const json& config) {
         TagProfiles.clear();
         RaceProfiles.clear();
 
@@ -100,16 +100,6 @@ namespace ProfileRepository {
             DefaultHumanoidProfile.Skills.begin(), 
             DefaultHumanoidProfile.Skills.end()
         );
-
-        std::ifstream file(configPath);
-        if (!file.is_open()) return;
-
-        json config;
-        try {
-            file >> config;
-        } catch (const json::parse_error&) {
-            return;
-        }
 
         if (config.contains("Tags")) {
             for (auto& [tag, data] : config["Tags"].items()) {

@@ -1,20 +1,29 @@
-#include "Plugin.h"
+#include "Logger.h"
+#include "UI.h"
+#include "EventManager.h"
+#include "ProfileRepository.h"
+#include "LanguageRepository.h"
+#include "ConfigManager.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+
+        auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("sLanguage:General");
+        std::string gameLanguage = setting ? setting->GetString() : "english";
+        LanguageRepository::LoadLanguage(gameLanguage);
+
         EventManager::Register();
-        ProfileRepository::Initialize("Data/SKSE/Plugins/CompanionsPath/config.json");
-    }
-    if (message->type == SKSE::MessagingInterface::kPostLoad) {
+        
+        ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
+        
+        UI::Register(); 
     }
 }
 
-
 SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     SKSE::Init(skse);
-    SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
     SetupLog();
     logger::info("Plugin loaded");
-    UI::Register();
+    SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
     return true;
 }

@@ -1,0 +1,45 @@
+{
+    "STAT_HEALTH": "Santé",
+    "STAT_MAGICKA": "Magie",
+    "STAT_STAMINA": "Vigueur",
+
+    "STAT_UNARMED_DAMAGE": "Dégâts à mains nues",
+    "STAT_DAMAGE_RESIST": "Résistance aux dégâts",
+    
+    "STAT_ONE_HANDED": "Armes à une main",
+    "STAT_TWO_HANDED": "Armes à deux mains",
+    "STAT_BLOCK": "Parade",
+    "STAT_HEAVY_ARMOR": "Armure lourde",
+    "STAT_LIGHT_ARMOR": "Armure légère",
+    "STAT_ARCHERY": "Archerie",
+    
+    "STAT_DESTRUCTION": "Destruction",
+    "STAT_RESTORATION": "Guérison",
+    "STAT_ALTERATION": "Altération",
+    "STAT_CONJURATION": "Conjuration",
+    "STAT_ILLUSION": "Illusion",
+
+    "STAT_SNEAK": "Furtivité",
+    "STAT_LOCKPICKING": "Crochetage",
+    "STAT_PICKPOCKET": "Vol à la tire",
+    "STAT_SPEECH": "Éloquence",
+    "STAT_ALCHEMY": "Alchimie",
+    "STAT_SMITHING": "Forgeage",
+    "STAT_ENCHANTING": "Enchantement",
+    
+    "STAT_UNKNOWN": "Inconnu",
+    
+    "UI_TAB_STATS": "Statistiques",
+    "UI_NO_FOLLOWER": "Aucun compagnon actif.",
+    "UI_UNKNOWN_UNLOADED": "Inconnu (Non chargé)",
+    "UI_REFRESH_FOLLOWERS": "Actualiser les compagnons",
+    "UI_RELOAD_CONFIG": "Recharger la configuration",
+    "UI_ACTOR_INVALID": "L'acteur est actuellement non chargé ou invalide.",
+    
+    "UI_LEVEL": "Niveau : %d",
+    "UI_ATTRIBUTES": "Attributs (%d / %d)",
+    "UI_SKILLS": "Compétences (%d / %d)",
+    
+    "UI_RESET_ATTRIBUTES": "Réinitialiser les attributs",
+    "UI_RESET_SKILLS": "Réinitialiser toutes les compétences"
+}
