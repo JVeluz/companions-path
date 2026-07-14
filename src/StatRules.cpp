@@ -19,7 +19,7 @@ namespace StatRules {
         return std::find(profile.Attributes.begin(), profile.Attributes.end(), actorValue) != profile.Attributes.end();
     }
 
-    int GetMaxPoints(RE::Actor* actor, RE::ActorValue actorValue) {
+    int GetMaxValue(RE::Actor* actor, RE::ActorValue actorValue) {
         if (IsAttribute(actor, actorValue)) {
             return -1;
         }

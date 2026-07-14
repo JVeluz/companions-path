@@ -29,9 +29,15 @@ namespace {
     }
 
     void SetStat(RE::Actor* actor, RE::ActorValue actorValue, int points) {
-        float calculatedValue = StatRules::CalculateStatValue(actor, actorValue, points);
-        ApplyStatValue(actor, actorValue, calculatedValue);
-        StatStorage::SetStatPoints(actor, actorValue, points);
+        if (points < 0) return;
+        
+        float value = StatRules::CalculateStatValue(actor, actorValue, points);
+        int maxValue = StatRules::GetMaxValue(actor, actorValue);
+        
+        if (maxValue == -1 || value <= maxValue) {
+            ApplyStatValue(actor, actorValue, value);
+            StatStorage::SetStatPoints(actor, actorValue, points);
+        }
     }
 
     void Reset(RE::Actor* actor, std::span<const RE::ActorValue> actorValues) {
@@ -79,18 +85,13 @@ namespace StatManager {
     void AddPoint(RE::Actor* actor, RE::ActorValue actorValue) {
         if (HasPointsLeft(actor, actorValue)) {
             int currentPoints = StatStorage::GetStatPoints(actor, actorValue);
-            int maxPoints = StatRules::GetMaxPoints(actor, actorValue);
-            if (maxPoints == -1 || currentPoints < maxPoints) {
-                SetStat(actor, actorValue, currentPoints + 1);
-            }
+            SetStat(actor, actorValue, currentPoints + 1);
         }
     }
 
     void RemovePoint(RE::Actor* actor, RE::ActorValue actorValue) {
         int currentPoints = StatStorage::GetStatPoints(actor, actorValue);
-        if (currentPoints > 0) {
-            SetStat(actor, actorValue, currentPoints - 1);
-        }
+        SetStat(actor, actorValue, currentPoints - 1);
     }
 
     void Harmonize() {
