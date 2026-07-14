@@ -101,12 +101,18 @@ namespace UI {
             } 
             else {
                 std::vector<const char*> names;
+                static std::string unloadedStr = LanguageRepository::GetString("UI_UNKNOWN_UNLOADED");
+                
                 for (auto& handle : currentFollowers) {
                     auto actorPtr = handle.get();
                     if (actorPtr) {
-                        names.push_back(actorPtr->GetName());
+                        if (auto actorBase = actorPtr->GetActorBase()) {
+                            names.push_back(actorBase->GetName()); 
+                        } else {
+                            names.push_back(actorPtr->GetName());
+                        }
                     } else {
-                        names.push_back(LanguageRepository::GetString("UI_UNKNOWN_UNLOADED"));
+                        names.push_back(unloadedStr.c_str());
                     }
                 }
                 ImGuiMCP::Combo("##Target", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
@@ -149,7 +155,7 @@ namespace UI {
             int maxSkillPoints = StatRules::GetTotalSkillPoints(selectedActor);
 
             ImGuiMCP::Text(LanguageRepository::GetString("UI_LEVEL"), selectedActor->GetLevel());
-            
+
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();
             ImGuiMCP::Spacing();

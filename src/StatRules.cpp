@@ -1,5 +1,8 @@
 #include "StatRules.h"
 
+#include "ProfileRepository.h"
+#include "ConfigManager.h"
+
 namespace StatRules {
 
     bool IsCalculatedStat(RE::ActorValue actorValue) {
@@ -36,6 +39,12 @@ namespace StatRules {
         auto it = profile.BaseValues.find(actorValue);
         if (it != profile.BaseValues.end()) {
             return it->second;
+        }
+
+        if (!ConfigManager::GetHarmonize()) {
+            if (auto baseNPC = actor->GetActorBase()) {
+                return baseNPC->GetActorValue(actorValue); 
+            }
         }
 
         return IsAttribute(actor, actorValue) ? 100.f : 15.f;

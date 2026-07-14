@@ -8,6 +8,10 @@
 
 using json = nlohmann::json;
 
+namespace {
+    bool bHarmonize = true; 
+}
+
 namespace ConfigManager {
     void LoadConfig(const std::string& configPath) {
         std::ifstream file(configPath);
@@ -30,6 +34,19 @@ namespace ConfigManager {
             LanguageRepository::LoadLanguage(langOverride);
         }
 
+        if (config.contains("Harmonize")) {
+            if (config["Harmonize"].is_boolean()) {
+                bHarmonize = config["Harmonize"].get<bool>();
+                logger::info("Harmonize option set to: {}", bHarmonize ? "true" : "false");
+            } else {
+                logger::error("Harmonize option must be a boolean (true or false).");
+            }
+        }
+
         ProfileRepository::InitializeFromJson(config);
+    }
+
+    bool GetHarmonize() {
+        return bHarmonize;
     }
 }

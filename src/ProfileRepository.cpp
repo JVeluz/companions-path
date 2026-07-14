@@ -4,12 +4,14 @@
 #include <fstream>
 #include <algorithm>
 #include <cctype>
+#include <format>
 
 using json = nlohmann::json;
 
 namespace {
     std::unordered_map<std::string, Profile> TagProfiles;
     std::unordered_map<std::string, Profile> RaceProfiles;
+    std::unordered_map<std::string, Profile> ActorProfiles;
     Profile DefaultHumanoidProfile;
 
     std::string ToLowercase(std::string_view str) {
@@ -74,6 +76,30 @@ namespace {
         
         return profile;
     }
+
+    void LoadProfileCategory(const json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
+        if (config.contains(categoryName)) {
+            for (auto& [key, data] : config[categoryName].items()) {
+                targetMap[ToLowercase(key)] = ParseProfile(data);
+            }
+        }
+    }
+
+    void MergeProfile(Profile& target, const Profile& source) {
+        if (source.overrideAttributes) {
+            target.Attributes = source.Attributes;
+        }
+        if (source.overrideSkills) {
+            target.Skills = source.Skills;
+        }
+        if (source.overrideAttributes || source.overrideSkills) {
+            target.All = target.Attributes;
+            target.All.insert(target.All.end(), target.Skills.begin(), target.Skills.end());
+        }
+        for (const auto& [av, value] : source.BaseValues) {
+            target.BaseValues[av] = value;
+        }
+    }
 }
 
 namespace ProfileRepository {
@@ -81,6 +107,7 @@ namespace ProfileRepository {
     void InitializeFromJson(const json& config) {
         TagProfiles.clear();
         RaceProfiles.clear();
+        ActorProfiles.clear();
 
         DefaultHumanoidProfile.Attributes = {
             RE::ActorValue::kHealth, RE::ActorValue::kMagicka, RE::ActorValue::kStamina
@@ -101,17 +128,9 @@ namespace ProfileRepository {
             DefaultHumanoidProfile.Skills.end()
         );
 
-        if (config.contains("Tags")) {
-            for (auto& [tag, data] : config["Tags"].items()) {
-                TagProfiles[ToLowercase(tag)] = ParseProfile(data);
-            }
-        }
-
-        if (config.contains("Races")) {
-            for (auto& [race, data] : config["Races"].items()) {
-                RaceProfiles[ToLowercase(race)] = ParseProfile(data);
-            }
-        }
+        LoadProfileCategory(config, "Tags", TagProfiles);
+        LoadProfileCategory(config, "Races", RaceProfiles);
+        LoadProfileCategory(config, "Actors", ActorProfiles);
     }
 
     Profile GetProfileForActor(RE::Actor* actor) {
@@ -121,31 +140,36 @@ namespace ProfileRepository {
 
         for (const auto& [tagKey, tagProfile] : TagProfiles) {
             if (actor->HasKeywordString(tagKey) || actor->HasKeywordString("actortype" + tagKey)) { 
-                finalProfile = tagProfile;
+                MergeProfile(finalProfile, tagProfile);
                 break;
             }
         }
 
         if (auto race = actor->GetRace()) {
             std::string raceName = ToLowercase(race->GetFormEditorID());
-            
             for (const auto& [raceKey, raceProfile] : RaceProfiles) {
                 if (raceName.find(raceKey) != std::string::npos) {
-                    if (raceProfile.overrideAttributes) {
-                        finalProfile.Attributes = raceProfile.Attributes;
-                    }
-                    if (raceProfile.overrideSkills) {
-                        finalProfile.Skills = raceProfile.Skills;
-                    }
-                    if (raceProfile.overrideAttributes || raceProfile.overrideSkills) {
-                        finalProfile.All = finalProfile.Attributes;
-                        finalProfile.All.insert(finalProfile.All.end(), finalProfile.Skills.begin(), finalProfile.Skills.end());
-                    }
-                    for (const auto& [av, value] : raceProfile.BaseValues) {
-                        finalProfile.BaseValues[av] = value;
-                    }
+                    MergeProfile(finalProfile, raceProfile);
                     break;
                 }
+            }
+        }
+
+        if (auto actorBase = actor->GetActorBase()) {
+            
+            std::string pluginPlusLocalID = "";
+            if (auto file = actorBase->GetFile(0)) {
+                uint32_t localID = actorBase->GetFormID() & 0x00FFFFFF;
+                pluginPlusLocalID = ToLowercase(std::format("{}|{:x}", file->GetFilename(), localID));
+            }
+
+            std::string actorName = ToLowercase(actorBase->GetName());
+
+            if (!pluginPlusLocalID.empty() && ActorProfiles.find(pluginPlusLocalID) != ActorProfiles.end()) {
+                MergeProfile(finalProfile, ActorProfiles[pluginPlusLocalID]);
+            }
+            else if (ActorProfiles.find(actorName) != ActorProfiles.end()) {
+                MergeProfile(finalProfile, ActorProfiles[actorName]);
             }
         }
 
