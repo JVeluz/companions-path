@@ -1,7 +1,9 @@
 #include "StatRules.h"
 
-#include "ProfileRepository.h"
+#include "profile.h"
 #include "ConfigManager.h"
+
+#include <algorithm>
 
 namespace StatRules {
 
@@ -15,7 +17,7 @@ namespace StatRules {
     }
 
     bool IsAttribute(RE::Actor* actor, RE::ActorValue actorValue) {
-        Profile profile = ProfileRepository::GetProfileForActor(actor);
+        Profile profile = ProfileParser::GetProfile(actor);
         return std::find(profile.Attributes.begin(), profile.Attributes.end(), actorValue) != profile.Attributes.end();
     }
 
@@ -34,7 +36,7 @@ namespace StatRules {
     }
 
     float GetBaseValue(RE::Actor* actor, RE::ActorValue actorValue) {
-        Profile profile = ProfileRepository::GetProfileForActor(actor);
+        Profile profile = ProfileParser::GetProfile(actor);
         
         auto it = profile.BaseValues.find(actorValue);
         if (it != profile.BaseValues.end()) {

@@ -1,19 +1,25 @@
 #include "ConfigManager.h"
-#include "ProfileRepository.h"
-#include "LanguageRepository.h"
 #include "logger.h"
 #include "json.hpp"
+#include "profile.h"
+#include "language.h"
 
 #include <fstream>
 
 using json = nlohmann::json;
 
 namespace {
-    bool bHarmonize = true; 
+    bool harmonize = true; 
+    std::string currentLanguage = "english";
+    std::string currentConfigPath = "";
 }
 
 namespace ConfigManager {
     void LoadConfig(const std::string& configPath) {
+        LanguageRepository::ScanAvailableLanguages();
+
+        currentConfigPath = configPath;
+
         std::ifstream file(configPath);
         if (!file.is_open()) {
             logger::error("Could not open config file: {}", configPath);
@@ -29,15 +35,15 @@ namespace ConfigManager {
         }
 
         if (config.contains("Language")) {
-            std::string langOverride = config["Language"].get<std::string>();
-            logger::info("Language override found in config: {}", langOverride);
-            LanguageRepository::LoadLanguage(langOverride);
+            currentLanguage = config["Language"].get<std::string>();
+            logger::info("Language override found in config: {}", currentLanguage);
+            LanguageRepository::LoadLanguage(currentLanguage);
         }
 
         if (config.contains("Harmonize")) {
             if (config["Harmonize"].is_boolean()) {
-                bHarmonize = config["Harmonize"].get<bool>();
-                logger::info("Harmonize option set to: {}", bHarmonize ? "true" : "false");
+                harmonize = config["Harmonize"].get<bool>();
+                logger::info("Harmonize option set to: {}", harmonize ? "true" : "false");
             } else {
                 logger::error("Harmonize option must be a boolean (true or false).");
             }
@@ -46,7 +52,59 @@ namespace ConfigManager {
         ProfileRepository::InitializeFromJson(config);
     }
 
+    void SaveConfig() {
+        if (currentConfigPath.empty()) {
+            logger::error("Cannot save config: Path is empty.");
+            return;
+        }
+
+        json config;
+        
+        std::ifstream inFile(currentConfigPath);
+        if (inFile.is_open()) {
+            try {
+                inFile >> config;
+            } catch (const json::parse_error& e) {
+                logger::warn("Failed to parse existing config before saving, creating a new one. Error: {}", e.what());
+            }
+            inFile.close();
+        }
+
+        config["Harmonize"] = harmonize;
+        config["Language"] = currentLanguage;
+
+        std::ofstream outFile(currentConfigPath);
+        if (outFile.is_open()) {
+            outFile << config.dump(4);
+            outFile.close();
+            logger::info("Configuration saved successfully.");
+        } else {
+            logger::error("Could not open config file for writing: {}", currentConfigPath);
+        }
+    }
+
     bool GetHarmonize() {
-        return bHarmonize;
+        return harmonize;
+    }
+    
+    void SetHarmonize(bool value) {
+        if (harmonize != value) {
+            harmonize = value;
+            SaveConfig();
+            logger::info("Harmonize changed to {}", harmonize);
+        }
+    }
+
+    std::string GetLanguage() {
+        return currentLanguage;
+    }
+
+    void SetLanguage(const std::string& lang) {
+        if (currentLanguage != lang) {
+            currentLanguage = lang;
+            LanguageRepository::LoadLanguage(currentLanguage);
+            SaveConfig();
+            logger::info("Language changed via UI to: {}", currentLanguage);
+        }
     }
 }

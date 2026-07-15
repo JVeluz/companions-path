@@ -1,10 +1,9 @@
 #pragma once
 
-#include "json.hpp"
-
-#include <string>
 #include <vector>
+#include <string>
 #include <unordered_map>
+#include <json.hpp>
 
 struct Profile {
     std::vector<RE::ActorValue> Attributes;
@@ -15,7 +14,14 @@ struct Profile {
     bool overrideSkills = false;
 };
 
+namespace ProfileParser {
+    Profile GetProfile(RE::Actor* actor);
+}
+
 namespace ProfileRepository {
     void InitializeFromJson(const nlohmann::json& config);
-    Profile GetProfileForActor(RE::Actor* actor);
+    const std::unordered_map<std::string, Profile>& GetTagProfiles();
+    const std::unordered_map<std::string, Profile>& GetRaceProfiles();
+    const std::unordered_map<std::string, Profile>& GetActorProfiles();
+    const Profile& GetDefaultProfile();
 }

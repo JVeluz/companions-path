@@ -1,12 +1,8 @@
-#include "ProfileRepository.h"
-#include "json.hpp"
+#include "profile.h"
 
-#include <fstream>
 #include <algorithm>
 #include <cctype>
 #include <format>
-
-using json = nlohmann::json;
 
 namespace {
     std::unordered_map<std::string, Profile> TagProfiles;
@@ -53,7 +49,7 @@ namespace {
         return RE::ActorValue::kNone; 
     }
 
-    Profile ParseProfile(const json& jProfile) {
+    Profile ParseProfile(const nlohmann::json& jProfile) {
         Profile profile;
         if (jProfile.contains("Attributes")) {
             for (const auto& attr : jProfile["Attributes"]) 
@@ -77,7 +73,7 @@ namespace {
         return profile;
     }
 
-    void LoadProfileCategory(const json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
+    void LoadProfileCategory(const nlohmann::json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
         if (config.contains(categoryName)) {
             for (auto& [key, data] : config[categoryName].items()) {
                 targetMap[ToLowercase(key)] = ParseProfile(data);
@@ -104,7 +100,7 @@ namespace {
 
 namespace ProfileRepository {
     
-    void InitializeFromJson(const json& config) {
+    void InitializeFromJson(const nlohmann::json& config) {
         TagProfiles.clear();
         RaceProfiles.clear();
         ActorProfiles.clear();
@@ -133,12 +129,20 @@ namespace ProfileRepository {
         LoadProfileCategory(config, "Actors", ActorProfiles);
     }
 
-    Profile GetProfileForActor(RE::Actor* actor) {
-        if (!actor) return DefaultHumanoidProfile;
+    const std::unordered_map<std::string, Profile>& GetTagProfiles() { return TagProfiles; }
+    const std::unordered_map<std::string, Profile>& GetRaceProfiles() { return RaceProfiles; }
+    const std::unordered_map<std::string, Profile>& GetActorProfiles() { return ActorProfiles; }
+    const Profile& GetDefaultProfile() { return DefaultHumanoidProfile; }
+}
 
-        Profile finalProfile = DefaultHumanoidProfile;
+namespace ProfileParser {
 
-        for (const auto& [tagKey, tagProfile] : TagProfiles) {
+    Profile GetProfile(RE::Actor* actor) {
+        if (!actor) return ProfileRepository::GetDefaultProfile();
+
+        Profile finalProfile = ProfileRepository::GetDefaultProfile();
+
+        for (const auto& [tagKey, tagProfile] : ProfileRepository::GetTagProfiles()) {
             if (actor->HasKeywordString(tagKey) || actor->HasKeywordString("actortype" + tagKey)) { 
                 MergeProfile(finalProfile, tagProfile);
                 break;
@@ -147,7 +151,7 @@ namespace ProfileRepository {
 
         if (auto race = actor->GetRace()) {
             std::string raceName = ToLowercase(race->GetFormEditorID());
-            for (const auto& [raceKey, raceProfile] : RaceProfiles) {
+            for (const auto& [raceKey, raceProfile] : ProfileRepository::GetRaceProfiles()) {
                 if (raceName.find(raceKey) != std::string::npos) {
                     MergeProfile(finalProfile, raceProfile);
                     break;
@@ -156,7 +160,6 @@ namespace ProfileRepository {
         }
 
         if (auto actorBase = actor->GetActorBase()) {
-            
             std::string pluginPlusLocalID = "";
             if (auto file = actorBase->GetFile(0)) {
                 uint32_t localID = actorBase->GetFormID() & 0x00FFFFFF;
@@ -164,12 +167,13 @@ namespace ProfileRepository {
             }
 
             std::string actorName = ToLowercase(actorBase->GetName());
+            const auto& actorProfiles = ProfileRepository::GetActorProfiles();
 
-            if (!pluginPlusLocalID.empty() && ActorProfiles.find(pluginPlusLocalID) != ActorProfiles.end()) {
-                MergeProfile(finalProfile, ActorProfiles[pluginPlusLocalID]);
+            if (!pluginPlusLocalID.empty() && actorProfiles.find(pluginPlusLocalID) != actorProfiles.end()) {
+                MergeProfile(finalProfile, actorProfiles.at(pluginPlusLocalID));
             }
-            else if (ActorProfiles.find(actorName) != ActorProfiles.end()) {
-                MergeProfile(finalProfile, ActorProfiles[actorName]);
+            else if (actorProfiles.find(actorName) != actorProfiles.end()) {
+                MergeProfile(finalProfile, actorProfiles.at(actorName));
             }
         }
 

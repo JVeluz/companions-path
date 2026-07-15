@@ -1,9 +1,9 @@
 #include "Logger.h"
 #include "UI.h"
 #include "EventManager.h"
-#include "ProfileRepository.h"
-#include "LanguageRepository.h"
 #include "ConfigManager.h"
+#include "profile.h"
+#include "language.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {

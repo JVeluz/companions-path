@@ -1,9 +1,5 @@
 #pragma once
 
-#include <algorithm>
-
-#include "ProfileRepository.h"
-
 namespace StatRules {
     bool IsCalculatedStat(RE::ActorValue actorValue);
     bool IsAttribute(RE::Actor* actor, RE::ActorValue actorValue);

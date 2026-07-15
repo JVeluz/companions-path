@@ -1,8 +1,8 @@
 #include "StatManager.h"
 #include "StatRules.h"
 #include "StatStorage.h"
-#include "ProfileRepository.h"
 #include "Utils.h"
+#include "profile.h"
 
 #include <algorithm>
 
@@ -56,22 +56,22 @@ namespace StatManager {
 
     int GetRemainingAttributePoints(RE::Actor* actor) { 
         int total = StatRules::GetTotalAttributePoints(actor);
-        int spent = GetSpentPoints(actor, ProfileRepository::GetProfileForActor(actor).Attributes);
+        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Attributes);
         return total - spent; 
     }
 
     int GetRemainingSkillPoints(RE::Actor* actor) {
         int total = StatRules::GetTotalSkillPoints(actor);
-        int spent = GetSpentPoints(actor, ProfileRepository::GetProfileForActor(actor).Skills);
+        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Skills);
         return total - spent; 
     }
 
     void ResetAttributes(RE::Actor* actor) { 
-        Reset(actor, ProfileRepository::GetProfileForActor(actor).Attributes); 
+        Reset(actor, ProfileParser::GetProfile(actor).Attributes); 
     }
 
     void ResetSkills(RE::Actor* actor) { 
-        Reset(actor, ProfileRepository::GetProfileForActor(actor).Skills); 
+        Reset(actor, ProfileParser::GetProfile(actor).Skills); 
     }
 
     bool HasPointsLeft(RE::Actor* actor, RE::ActorValue actorValue) {
@@ -98,7 +98,7 @@ namespace StatManager {
         for (auto& handle : Utils::GetActiveFollowers()) {
             if (auto actorPtr = handle.get()) {
                 if (auto actor = actorPtr.get()) {
-                    auto profile = ProfileRepository::GetProfileForActor(actor);
+                    auto profile = ProfileParser::GetProfile(actor);
                     
                     for (const auto& actorValue : profile.All) {
                         SetStat(actor, actorValue, StatStorage::GetStatPoints(actor, actorValue));
