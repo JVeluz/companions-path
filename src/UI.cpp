@@ -2,17 +2,19 @@
 
 #include "Utils.h"
 #include "StatManager.h"
-#include "StatRules.h"
+#include "Rules.h"
 #include "ConfigManager.h"
 #include "language.h"
 #include "profile.h"
+
+#include "structs.h"
+#include "PerkManager.h"
 
 #include <vector>
 #include <string>
 
 namespace {
     std::vector<RE::ActorHandle> currentFollowers;
-    int selectedCompanionIndex = 0;
 
     const char* GetActorValueName(RE::ActorValue actorValue) {
         switch (actorValue) {
@@ -47,54 +49,59 @@ namespace {
             default:                             return TranslationService::GetString("STAT_UNKNOWN");
         }
     }
-
-    void RenderStatRow(RE::Actor *actor, RE::ActorValue actorValue) {
-        const char* name = GetActorValueName(actorValue);
-
-        ImGuiMCP::PushID(name);
-
-        float value = StatManager::GetStatValue(actor, actorValue);
-
-        ImGuiMCP::Text("%3.0f %s", value, name);
-
-        if (ImGuiMCP::SmallButton(" << ")) {
-            for(int i = 0; i < 5; ++i) 
-                StatManager::RemovePoint(actor, actorValue);
-        }
-        ImGuiMCP::SameLine();
-        
-        if (ImGuiMCP::SmallButton(" - ")) {
-            StatManager::RemovePoint(actor, actorValue);
-        }
-        
-        ImGuiMCP::SameLine();
-        
-        if (ImGuiMCP::SmallButton(" + ")) {
-            StatManager::AddPoint(actor, actorValue);
-        }
-        
-        ImGuiMCP::SameLine();
-
-        if (ImGuiMCP::SmallButton(" >> ")) {
-            for(int i = 0; i < 5; ++i) 
-                StatManager::AddPoint(actor, actorValue);
-        }
-
-        ImGuiMCP::PopID();
-    }
 }
 
 namespace UI {
+    int selectedCompanionIndex = 0;
+
     void Register() {
         if (SKSEMenuFramework::IsInstalled()) {
-            static std::string tabStats = TranslationService::GetString("UI_TAB_STATS");
-            SKSEMenuFramework::SetSection("Companions' Path"); 
+            SKSEMenuFramework::SetSection("Companions' Path");
             SKSEMenuFramework::AddSectionItem(TranslationService::GetString("UI_TAB_STATS"), UI::Stats::Render);
+            SKSEMenuFramework::AddSectionItem(TranslationService::GetString("UI_TAB_PERKS"), UI::PerksUI::Render);
             SKSEMenuFramework::AddSectionItem(TranslationService::GetString("UI_TAB_SETTINGS"), UI::Settings::Render);
         }
     }
 
     namespace Stats {
+
+        namespace {
+            void RenderStatRow(RE::Actor *actor, RE::ActorValue actorValue) {
+            const char* name = GetActorValueName(actorValue);
+
+            ImGuiMCP::PushID(name);
+
+            float value = StatManager::GetStatValue(actor, actorValue);
+
+            ImGuiMCP::Text("%3.0f %s", value, name);
+
+            if (ImGuiMCP::SmallButton(" << ")) {
+                for(int i = 0; i < 5; ++i) 
+                    StatManager::RemovePoint(actor, actorValue);
+            }
+            ImGuiMCP::SameLine();
+            
+            if (ImGuiMCP::SmallButton(" - ")) {
+                StatManager::RemovePoint(actor, actorValue);
+            }
+            
+            ImGuiMCP::SameLine();
+            
+            if (ImGuiMCP::SmallButton(" + ")) {
+                StatManager::AddPoint(actor, actorValue);
+            }
+            
+            ImGuiMCP::SameLine();
+
+            if (ImGuiMCP::SmallButton(" >> ")) {
+                for(int i = 0; i < 5; ++i) 
+                    StatManager::AddPoint(actor, actorValue);
+            }
+
+            ImGuiMCP::PopID();
+        }
+        }
+
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
             if (currentFollowers.empty()) {
@@ -152,8 +159,8 @@ namespace UI {
 
             int remainingAttributePoints = StatManager::GetRemainingAttributePoints(selectedActor);
             int remainingSkillPoints = StatManager::GetRemainingSkillPoints(selectedActor);
-            int maxAttributePoints = StatRules::GetTotalAttributePoints(selectedActor);
-            int maxSkillPoints = StatRules::GetTotalSkillPoints(selectedActor);
+            int maxAttributePoints = Rules::Stats::GetAttributePoints(selectedActor);
+            int maxSkillPoints = Rules::Stats::GetSkillPoints(selectedActor);
 
             ImGuiMCP::Text(TranslationService::GetString("UI_LEVEL"), selectedActor->GetLevel());
 
@@ -208,6 +215,127 @@ namespace UI {
             
             if (ImGuiMCP::Button(TranslationService::GetString("UI_RESET_SKILLS"))) {
                 StatManager::ResetSkills(selectedActor);
+            }
+        }
+    }
+
+    namespace PerksUI {
+
+        void __stdcall Render() {
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            
+            if (currentFollowers.empty()) {
+                ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
+                return;
+            } 
+            
+            // --- 1. SELECTION DU COMPAGNON ---
+            std::vector<const char*> names;
+            static std::string unloadedStr = TranslationService::GetString("UI_UNKNOWN_UNLOADED");
+            
+            for (auto& handle : currentFollowers) {
+                auto actorPtr = handle.get();
+                if (actorPtr) {
+                    if (auto actorBase = actorPtr->GetActorBase()) {
+                        names.push_back(actorBase->GetName()); 
+                    } else {
+                        names.push_back(actorPtr->GetName());
+                    }
+                } else {
+                    names.push_back(unloadedStr.c_str());
+                }
+            }
+            ImGuiMCP::Combo("##TargetPerks", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Spacing();
+
+            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= currentFollowers.size()) 
+                return;
+
+            auto selectedActorNiPtr = currentFollowers[selectedCompanionIndex].get();
+            if (!selectedActorNiPtr) {
+                ImGuiMCP::Text("%s", TranslationService::GetString("UI_ACTOR_INVALID"));
+                return;
+            }
+            
+            auto selectedActor = selectedActorNiPtr.get();
+            auto profile = ProfileParser::GetProfile(selectedActor);
+
+            if (profile.Skills.empty()) {
+                ImGuiMCP::Text("Aucune compétence pour ce profil.");
+                return;
+            }
+
+            // --- 2. SELECTION DE L'ARBRE DE COMPETENCE ---
+            static int selectedSkillIndex = 0;
+            
+            // Sécurité si on change de compagnon et que le profil a moins de compétences
+            if (selectedSkillIndex >= profile.Skills.size()) {
+                selectedSkillIndex = 0;
+            }
+
+            std::vector<const char*> skillNames;
+            for (auto skill : profile.Skills) {
+                skillNames.push_back(GetActorValueName(skill));
+            }
+
+            ImGuiMCP::Combo("##SkillTree", &selectedSkillIndex, skillNames.data(), static_cast<int>(skillNames.size()));
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            // --- 3. RECUPERATION ET TRI DES PERKS ---
+            RE::ActorValue currentSkill = profile.Skills[selectedSkillIndex];
+            const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
+
+            if (!tree || tree->Nodes.empty()) {
+                ImGuiMCP::Text("Aucun perk trouve pour cette competence.");
+                return;
+            }
+
+            // Copie des pointeurs pour pouvoir les trier sans altérer l'arbre global
+            std::vector<Perks::PerkNode*> sortedNodes;
+            for (const auto& node : tree->Nodes) {
+                sortedNodes.push_back(node.get());
+            }
+
+            // Tri par niveau requis croissant
+            std::sort(sortedNodes.begin(), sortedNodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) {
+                return a->RequiredSkillLevel < b->RequiredSkillLevel;
+            });
+
+            // --- 4. AFFICHAGE DES BOUTONS ---
+            for (auto* node : sortedNodes) {
+                bool hasPerk = selectedActor->HasPerk(node->Form);
+                bool meetsReqs = PerkManager::HasPrerequisites(selectedActor, node);
+                
+                // Griser le bouton si on n'a pas les prérequis (parents) 
+                // et qu'on ne possède pas déjà le perk.
+                bool disabled = !meetsReqs && !hasPerk;
+                if (disabled) {
+                    ImGuiMCP::BeginDisabled();
+                }
+
+                // Formatage du texte du bouton : "Nom (Niveau) [Acquis]"
+                std::string btnText = node->Name + " (Niv. " + std::to_string(node->RequiredSkillLevel) + ")";
+                if (hasPerk) {
+                    btnText += " [Acquis]";
+                }
+
+                // Si le bouton est cliqué et qu'on n'a pas encore le perk
+                if (ImGuiMCP::Button(btnText.c_str())) {
+                    if (!hasPerk) {
+                        selectedActor->AddPerk(node->Form);
+                        
+                        // NOTE : C'est ici que tu devras déduire tes "Perk Points" si tu les gères.
+                        // Exemple: StatManager::RemovePerkPoint(selectedActor);
+                    }
+                }
+
+                if (disabled) {
+                    ImGuiMCP::EndDisabled();
+                }
             }
         }
     }

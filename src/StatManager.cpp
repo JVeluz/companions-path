@@ -1,6 +1,6 @@
 #include "StatManager.h"
-#include "StatRules.h"
-#include "StatStorage.h"
+#include "Storage.h"
+#include "Rules.h"
 #include "Utils.h"
 #include "profile.h"
 
@@ -11,13 +11,13 @@ namespace {
     int GetSpentPoints(RE::Actor* actor, std::span<const RE::ActorValue> actorValues) {
         int spent = 0;
         for (const auto& actorValue : actorValues) {
-            spent += StatStorage::GetStatPoints(actor, actorValue);
+            spent += Storage::Stats::GetPoints(actor, actorValue);
         }
         return spent;
     }
 
     void ApplyStatValue(RE::Actor* actor, RE::ActorValue actorValue, float targetValue) {
-        if (StatRules::IsCalculatedStat(actorValue)) {
+        if (Rules::Stats::IsCalculatedStat(actorValue)) {
             float currentMod = actor->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, actorValue);
             float diff = targetValue - currentMod;
             if (diff != 0.0f) {
@@ -31,12 +31,12 @@ namespace {
     void SetStat(RE::Actor* actor, RE::ActorValue actorValue, int points) {
         if (points < 0) return;
         
-        float value = StatRules::CalculateStatValue(actor, actorValue, points);
-        int maxValue = StatRules::GetMaxValue(actor, actorValue);
+        float value = Rules::Stats::CalculateStatValue(actor, actorValue, points);
+        int maxValue = Rules::Stats::GetMaxValue(actor, actorValue);
         
         if (maxValue == -1 || value <= maxValue) {
             ApplyStatValue(actor, actorValue, value);
-            StatStorage::SetStatPoints(actor, actorValue, points);
+            Storage::Stats::SetPoints(actor, actorValue, points);
         }
     }
 
@@ -50,18 +50,18 @@ namespace {
 namespace StatManager {
 
     float GetStatValue(RE::Actor* actor, RE::ActorValue actorValue) {
-        int points = StatStorage::GetStatPoints(actor, actorValue);
-        return StatRules::CalculateStatValue(actor, actorValue, points);
+        int points = Storage::Stats::GetPoints(actor, actorValue);
+        return Rules::Stats::CalculateStatValue(actor, actorValue, points);
     }
 
     int GetRemainingAttributePoints(RE::Actor* actor) { 
-        int total = StatRules::GetTotalAttributePoints(actor);
+        int total = Rules::Stats::GetAttributePoints(actor);
         int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Attributes);
         return total - spent; 
     }
 
     int GetRemainingSkillPoints(RE::Actor* actor) {
-        int total = StatRules::GetTotalSkillPoints(actor);
+        int total = Rules::Stats::GetSkillPoints(actor);
         int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Skills);
         return total - spent; 
     }
@@ -75,7 +75,7 @@ namespace StatManager {
     }
 
     bool HasPointsLeft(RE::Actor* actor, RE::ActorValue actorValue) {
-        if (StatRules::IsAttribute(actor, actorValue)) {
+        if (Rules::Stats::IsAttribute(actor, actorValue)) {
             return GetRemainingAttributePoints(actor) > 0;
         } else {
             return GetRemainingSkillPoints(actor) > 0;
@@ -84,13 +84,13 @@ namespace StatManager {
 
     void AddPoint(RE::Actor* actor, RE::ActorValue actorValue) {
         if (HasPointsLeft(actor, actorValue)) {
-            int currentPoints = StatStorage::GetStatPoints(actor, actorValue);
+            int currentPoints = Storage::Stats::GetPoints(actor, actorValue);
             SetStat(actor, actorValue, currentPoints + 1);
         }
     }
 
     void RemovePoint(RE::Actor* actor, RE::ActorValue actorValue) {
-        int currentPoints = StatStorage::GetStatPoints(actor, actorValue);
+        int currentPoints = Storage::Stats::GetPoints(actor, actorValue);
         SetStat(actor, actorValue, currentPoints - 1);
     }
 
@@ -101,7 +101,7 @@ namespace StatManager {
                     auto profile = ProfileParser::GetProfile(actor);
                     
                     for (const auto& actorValue : profile.All) {
-                        SetStat(actor, actorValue, StatStorage::GetStatPoints(actor, actorValue));
+                        SetStat(actor, actorValue, Storage::Stats::GetPoints(actor, actorValue));
                     }
 
                     for (const auto& [actorValue, baseValue] : profile.BaseValues) {

@@ -1,6 +1,7 @@
 #include "Logger.h"
 #include "UI.h"
 #include "EventManager.h"
+#include "PerkManager.h"
 #include "ConfigManager.h"
 #include "profile.h"
 #include "language.h"
@@ -14,6 +15,8 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 
         EventManager::Register();
         
+        PerkManager::InitializeTrees();
+
         ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
         
         UI::Register(); 

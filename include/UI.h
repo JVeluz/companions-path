@@ -9,6 +9,10 @@ namespace UI {
         void __stdcall Render();
     }
 
+    namespace PerksUI {
+        void __stdcall Render();
+    }
+
     namespace Settings {
         void __stdcall Render();
     }
