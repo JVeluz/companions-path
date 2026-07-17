@@ -5,100 +5,87 @@
 #include <format>
 
 namespace {
-    std::unordered_map<std::string, Profile> tagProfiles;
-    std::unordered_map<std::string, Profile> raceProfiles;
-    std::unordered_map<std::string, Profile> actorProfiles;
-    Profile defaultHumanoidProfile;
-
     std::string ToLowercase(std::string_view str) {
         std::string lowerStr(str);
         std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
             [](unsigned char c){ return std::tolower(c); });
         return lowerStr;
     }
-
-    RE::ActorValue StringToActorValue(const std::string& str) {
-        static const std::unordered_map<std::string, RE::ActorValue> map = {
-            {"Health", RE::ActorValue::kHealth},
-            {"Magicka", RE::ActorValue::kMagicka},
-            {"Stamina", RE::ActorValue::kStamina},
-            {"UnarmedDamage", RE::ActorValue::kUnarmedDamage},
-            {"DamageResist", RE::ActorValue::kDamageResist},
-            {"OneHanded", RE::ActorValue::kOneHanded},
-            {"TwoHanded", RE::ActorValue::kTwoHanded},
-            {"Block", RE::ActorValue::kBlock},
-            {"HeavyArmor", RE::ActorValue::kHeavyArmor},
-            {"LightArmor", RE::ActorValue::kLightArmor},
-            {"Archery", RE::ActorValue::kArchery},
-            {"Destruction", RE::ActorValue::kDestruction},
-            {"Restoration", RE::ActorValue::kRestoration},
-            {"Alteration", RE::ActorValue::kAlteration},
-            {"Conjuration", RE::ActorValue::kConjuration},
-            {"Illusion", RE::ActorValue::kIllusion},
-            {"Sneak", RE::ActorValue::kSneak},
-            {"Lockpicking", RE::ActorValue::kLockpicking},
-            {"Pickpocket", RE::ActorValue::kPickpocket},
-            {"Speech", RE::ActorValue::kSpeech},
-            {"Alchemy", RE::ActorValue::kAlchemy},
-            {"Smithing", RE::ActorValue::kSmithing},
-            {"Enchanting", RE::ActorValue::kEnchanting}
-        };
-        
-        auto it = map.find(str);
-        if (it != map.end()) return it->second;
-        return RE::ActorValue::kNone; 
-    }
-
-    Profile ParseProfile(const nlohmann::json& jProfile) {
-        Profile profile;
-        if (jProfile.contains("Attributes")) {
-            for (const auto& attr : jProfile["Attributes"]) 
-                profile.attributes.push_back(StringToActorValue(attr));
-            profile.overrideAttributes = true;
-        }
-        if (jProfile.contains("Skills")) {
-            for (const auto& skill : jProfile["Skills"]) 
-                profile.skills.push_back(StringToActorValue(skill));
-            profile.overrideSkills = true;
-        }
-        if (jProfile.contains("BaseValues")) {
-            for (auto& [key, value] : jProfile["BaseValues"].items()) {
-                profile.baseValues[StringToActorValue(key)] = value.get<float>();
-            }
-        }
-        
-        profile.all = profile.attributes;
-        profile.all.insert(profile.all.end(), profile.skills.begin(), profile.skills.end());
-        
-        return profile;
-    }
-
-    void LoadProfileCategory(const nlohmann::json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
-        if (config.contains(categoryName)) {
-            for (auto& [key, data] : config[categoryName].items()) {
-                targetMap[ToLowercase(key)] = ParseProfile(data);
-            }
-        }
-    }
-
-    void MergeProfile(Profile& target, const Profile& source) {
-        if (source.overrideAttributes) {
-            target.attributes = source.attributes;
-        }
-        if (source.overrideSkills) {
-            target.skills = source.skills;
-        }
-        if (source.overrideAttributes || source.overrideSkills) {
-            target.all = target.attributes;
-            target.all.insert(target.all.end(), target.skills.begin(), target.skills.end());
-        }
-        for (const auto& [av, value] : source.baseValues) {
-            target.baseValues[av] = value;
-        }
-    }
 }
 
 namespace ProfileRepository {
+
+    namespace {
+        std::unordered_map<std::string, Profile> tagProfiles;
+        std::unordered_map<std::string, Profile> raceProfiles;
+        std::unordered_map<std::string, Profile> actorProfiles;
+        Profile defaultHumanoidProfile;
+
+        RE::ActorValue StringToActorValue(const std::string& str) {
+            static const std::unordered_map<std::string, RE::ActorValue> map = {
+                {"Health", RE::ActorValue::kHealth},
+                {"Magicka", RE::ActorValue::kMagicka},
+                {"Stamina", RE::ActorValue::kStamina},
+                {"UnarmedDamage", RE::ActorValue::kUnarmedDamage},
+                {"DamageResist", RE::ActorValue::kDamageResist},
+                {"OneHanded", RE::ActorValue::kOneHanded},
+                {"TwoHanded", RE::ActorValue::kTwoHanded},
+                {"Block", RE::ActorValue::kBlock},
+                {"HeavyArmor", RE::ActorValue::kHeavyArmor},
+                {"LightArmor", RE::ActorValue::kLightArmor},
+                {"Archery", RE::ActorValue::kArchery},
+                {"Destruction", RE::ActorValue::kDestruction},
+                {"Restoration", RE::ActorValue::kRestoration},
+                {"Alteration", RE::ActorValue::kAlteration},
+                {"Conjuration", RE::ActorValue::kConjuration},
+                {"Illusion", RE::ActorValue::kIllusion},
+                {"Sneak", RE::ActorValue::kSneak},
+                {"Lockpicking", RE::ActorValue::kLockpicking},
+                {"Pickpocket", RE::ActorValue::kPickpocket},
+                {"Speech", RE::ActorValue::kSpeech},
+                {"Alchemy", RE::ActorValue::kAlchemy},
+                {"Smithing", RE::ActorValue::kSmithing},
+                {"Enchanting", RE::ActorValue::kEnchanting}
+            };
+            
+            auto it = map.find(str);
+            if (it != map.end()) return it->second;
+            return RE::ActorValue::kNone; 
+        }
+
+        Profile ParseProfile(const nlohmann::json& jProfile) {
+            Profile profile;
+            if (jProfile.contains("Attributes")) {
+                for (const auto& attr : jProfile["Attributes"]) 
+                    profile.attributes.push_back(StringToActorValue(attr));
+                profile.overrideAttributes = true;
+            }
+            if (jProfile.contains("Skills")) {
+                for (const auto& skill : jProfile["Skills"]) 
+                    profile.skills.push_back(StringToActorValue(skill));
+                profile.overrideSkills = true;
+            }
+            if (jProfile.contains("BaseValues")) {
+                for (auto& [key, value] : jProfile["BaseValues"].items()) {
+                    profile.baseValues[StringToActorValue(key)] = value.get<float>();
+                }
+            }
+            
+            profile.all = profile.attributes;
+            profile.all.insert(profile.all.end(), profile.skills.begin(), profile.skills.end());
+            
+            return profile;
+        }
+
+        void LoadProfileCategory(const nlohmann::json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
+            if (config.contains(categoryName)) {
+                for (auto& [key, data] : config[categoryName].items()) {
+                    targetMap[ToLowercase(key)] = ParseProfile(data);
+                }
+            }
+        }
+
+    }
     
     void InitializeFromJson(const nlohmann::json& config) {
         tagProfiles.clear();
@@ -136,6 +123,24 @@ namespace ProfileRepository {
 }
 
 namespace ProfileParser {
+
+    namespace {
+        void MergeProfile(Profile& target, const Profile& source) {
+            if (source.overrideAttributes) {
+                target.attributes = source.attributes;
+            }
+            if (source.overrideSkills) {
+                target.skills = source.skills;
+            }
+            if (source.overrideAttributes || source.overrideSkills) {
+                target.all = target.attributes;
+                target.all.insert(target.all.end(), target.skills.begin(), target.skills.end());
+            }
+            for (const auto& [av, value] : source.baseValues) {
+                target.baseValues[av] = value;
+            }
+        }
+    }
 
     Profile GetProfile(RE::Actor* actor) {
         if (!actor) return ProfileRepository::GetDefaultProfile();
