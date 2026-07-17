@@ -6,10 +6,10 @@
 #include <memory>
 
 struct Profile {
-    std::vector<RE::ActorValue> Attributes;
-    std::vector<RE::ActorValue> Skills;
-    std::unordered_map<RE::ActorValue, float> BaseValues;
-    std::vector<RE::ActorValue> All;
+    std::vector<RE::ActorValue> attributes;
+    std::vector<RE::ActorValue> skills;
+    std::unordered_map<RE::ActorValue, float> baseValues;
+    std::vector<RE::ActorValue> all;
     bool overrideAttributes = false;
     bool overrideSkills = false;
 };
@@ -17,20 +17,20 @@ struct Profile {
 namespace Perks {
 
     struct PerkNode {
-        std::string Name;
-        RE::ActorValue AssociatedSkill;
-        int MaxRanks = 1;
+        std::string name;
+        RE::ActorValue associatedSkill;
+        int maxRanks = 1;
         
-        std::vector<RE::BGSPerk*> Ranks;
-        std::vector<int> RankRequirements;
+        std::vector<RE::BGSPerk*> ranks;
+        std::vector<int> rankRequirements;
 
-        std::vector<PerkNode*> Parents;
-        std::vector<PerkNode*> Children;
+        std::vector<PerkNode*> parents;
+        std::vector<PerkNode*> children;
     };
     
     struct PerkTree {
-        RE::ActorValue Skill = RE::ActorValue::kNone;
-        std::vector<std::unique_ptr<PerkNode>> Nodes;
-        std::vector<PerkNode*> RootNodes;
+        RE::ActorValue skill = RE::ActorValue::kNone;
+        std::vector<std::unique_ptr<PerkNode>> nodes;
+        std::vector<PerkNode*> rootNodes;
     };
 }

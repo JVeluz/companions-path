@@ -42,33 +42,39 @@ namespace {
 
         if (nativeNode->perk) {
             auto customNode = std::make_unique<Perks::PerkNode>();
-            customNode->Name = nativeNode->perk->GetFullName();
-            customNode->AssociatedSkill = av;
+            customNode->name = nativeNode->perk->GetFullName();
+
+            RE::BSString perkDescription;
+            nativeNode->perk->GetDescription(perkDescription, nativeNode->perk);
+            
+            logger::info("{} :\n{}\n", customNode->name, perkDescription.c_str());
+
+            customNode->associatedSkill = av;
 
             RE::BGSPerk* currentRankPerk = nativeNode->perk;
             while (currentRankPerk) {
-                customNode->Ranks.push_back(currentRankPerk);
-                customNode->RankRequirements.push_back(GetSkillLevelRequirement(currentRankPerk));
+                customNode->ranks.push_back(currentRankPerk);
+                customNode->rankRequirements.push_back(GetSkillLevelRequirement(currentRankPerk));
                 currentRankPerk = currentRankPerk->nextPerk;
             }
-            customNode->MaxRanks = static_cast<int>(customNode->Ranks.size());
+            customNode->maxRanks = static_cast<int>(customNode->ranks.size());
 
             currentCustom = customNode.get();
 
-            // logger::info("[Profondeur {}] Perk trouve : '{}' (MaxRanks: {}, ID Rang 1: {:08X})", depth, currentCustom->Name, currentCustom->MaxRanks, currentCustom->Ranks[0]->GetFormID());
+            // logger::info("[Profondeur {}] Perk trouve : '{}' (maxRanks: {}, ID Rang 1: {:08X})", depth, currentCustom->Name, currentCustom->maxRanks, currentCustom->ranks[0]->GetFormID());
 
             if (parentNode) {
-                currentCustom->Parents.push_back(parentNode);
-                parentNode->Children.push_back(currentCustom);
+                currentCustom->parents.push_back(parentNode);
+                parentNode->children.push_back(currentCustom);
                 // logger::info("[Profondeur {}] -> Parent assigne : '{}'", depth, parentNode->Name);
             }
 
-            for (auto* rankPerk : currentCustom->Ranks) {
+            for (auto* rankPerk : currentCustom->ranks) {
                 nodeIndex[rankPerk->GetFormID()] = currentCustom;
             }
 
             nodeMap[nativeNode] = currentCustom;
-            tree.Nodes.push_back(std::move(customNode));
+            tree.nodes.push_back(std::move(customNode));
 
         } else {
             // logger::info("[Profondeur {}] Noeud factice (Dummy) detecte.", depth);
@@ -146,18 +152,18 @@ namespace PerkManager {
                 // logger::info("--- Arbre trouve pour ActorValue ID : {} ({}) ---", i, avInfo->GetFullName());
 
                 Perks::PerkTree& tree = perkTrees[av];
-                tree.Skill = av;
+                tree.skill = av;
 
                 std::unordered_map<RE::BGSSkillPerkTreeNode*, Perks::PerkNode*> nodeMap;
 
                 TraverseNode(avInfo->perkTree, av, tree, nodeMap, 0, nullptr);
 
-                for (const auto& node : tree.Nodes) {
-                    if (node->Parents.empty()) {
-                        tree.RootNodes.push_back(node.get());
+                for (const auto& node : tree.nodes) {
+                    if (node->parents.empty()) {
+                        tree.rootNodes.push_back(node.get());
                     }
                 }
-                // logger::info("--- Fin de l'arbre ActorValue {}. Noeuds: {}, RootNodes: {} ---", i, tree.Nodes.size(), tree.RootNodes.size());
+                // logger::info("--- Fin de l'arbre ActorValue {}. Noeuds: {}, rootNodes: {} ---", i, tree.nodes.size(), tree.rootNodes.size());
             }
         }
         // logger::info("=== FIN INITIALISATION DES ARBRES DE PERKS ===");
@@ -184,8 +190,8 @@ namespace PerkManager {
 
     int GetCurrentRank(RE::Actor* actor, const Perks::PerkNode* node) {
         int rank = 0;
-        while (rank < node->MaxRanks) {
-            if (!Storage::Perks::HasPurchased(actor, node->Ranks[rank])) break;
+        while (rank < node->maxRanks) {
+            if (!Storage::Perks::HasPurchased(actor, node->ranks[rank])) break;
             rank++;
         }
         return rank;
@@ -193,23 +199,23 @@ namespace PerkManager {
 
     int GetNextRequirement(RE::Actor* actor, const Perks::PerkNode* node) {
         int rank = GetCurrentRank(actor, node);
-        if (rank >= node->MaxRanks) return node->RankRequirements.back();
-        return node->RankRequirements[rank];
+        if (rank >= node->maxRanks) return node->rankRequirements.back();
+        return node->rankRequirements[rank];
     }
 
     bool HasPrerequisites(RE::Actor* actor, const Perks::PerkNode* node) {
         if (!actor || !node) return false;
-        if (node->Parents.empty()) return true;
+        if (node->parents.empty()) return true;
 
-        for (const auto* parentNode : node->Parents) {
-            if (!parentNode->Ranks.empty() && Storage::Perks::HasPurchased(actor, parentNode->Ranks[0])) {
+        for (const auto* parentNode : node->parents) {
+            if (!parentNode->ranks.empty() && Storage::Perks::HasPurchased(actor, parentNode->ranks[0])) {
                 return true;
             }
         }
         return false;
     }
 
-    bool IsMaxedOut(RE::Actor* actor, const Perks::PerkNode* node) { return GetCurrentRank(actor, node) >= node->MaxRanks; }
+    bool IsMaxedOut(RE::Actor* actor, const Perks::PerkNode* node) { return GetCurrentRank(actor, node) >= node->maxRanks; }
 
     bool CanPurchase(RE::Actor* actor, const Perks::PerkNode* node) {
         if (IsMaxedOut(actor, node)) return false;
@@ -217,7 +223,7 @@ namespace PerkManager {
         if (!HasPrerequisites(actor, node)) return false;
 
         int requirement = GetNextRequirement(actor, node);
-        float currentSkillLevel = StatManager::GetStatValue(actor, node->AssociatedSkill);
+        float currentSkillLevel = StatManager::GetStatValue(actor, node->associatedSkill);
 
         return currentSkillLevel >= requirement;
     }
@@ -227,7 +233,7 @@ namespace PerkManager {
     void Purchase(RE::Actor* actor, const Perks::PerkNode* node) {
         if (CanPurchase(actor, node)) {
             int rank = GetCurrentRank(actor, node);
-            auto* perk = node->Ranks[rank];
+            auto* perk = node->ranks[rank];
             AddPerkToActor(actor, perk);
             Storage::Perks::RecordPurchase(actor, perk);
         }
@@ -236,15 +242,15 @@ namespace PerkManager {
     void Refund(RE::Actor* actor, const Perks::PerkNode* node) {
         if (CanRefund(actor, node)) {
             int rank = GetCurrentRank(actor, node);
-            auto* perk = node->Ranks[rank - 1];
+            auto* perk = node->ranks[rank - 1];
             RemovePerkToActor(actor, perk);
             Storage::Perks::RecordRefund(actor, perk);
         }
     }
 
     void RefundTree(RE::Actor* actor, const Perks::PerkNode* node) {
-        for (int rank = 0; rank < node->MaxRanks; rank++) {
-            auto* perk = node->Ranks[rank];
+        for (int rank = 0; rank < node->maxRanks; rank++) {
+            auto* perk = node->ranks[rank];
             RemovePerkToActor(actor, perk);
             if (Storage::Perks::HasPurchased(actor, perk)) {
                 actor->RemovePerk(perk);

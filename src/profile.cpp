@@ -5,10 +5,10 @@
 #include <format>
 
 namespace {
-    std::unordered_map<std::string, Profile> TagProfiles;
-    std::unordered_map<std::string, Profile> RaceProfiles;
-    std::unordered_map<std::string, Profile> ActorProfiles;
-    Profile DefaultHumanoidProfile;
+    std::unordered_map<std::string, Profile> tagProfiles;
+    std::unordered_map<std::string, Profile> raceProfiles;
+    std::unordered_map<std::string, Profile> actorProfiles;
+    Profile defaultHumanoidProfile;
 
     std::string ToLowercase(std::string_view str) {
         std::string lowerStr(str);
@@ -19,29 +19,29 @@ namespace {
 
     RE::ActorValue StringToActorValue(const std::string& str) {
         static const std::unordered_map<std::string, RE::ActorValue> map = {
-            {"kHealth", RE::ActorValue::kHealth},
-            {"kMagicka", RE::ActorValue::kMagicka},
-            {"kStamina", RE::ActorValue::kStamina},
-            {"kUnarmedDamage", RE::ActorValue::kUnarmedDamage},
-            {"kDamageResist", RE::ActorValue::kDamageResist},
-            {"kOneHanded", RE::ActorValue::kOneHanded},
-            {"kTwoHanded", RE::ActorValue::kTwoHanded},
-            {"kBlock", RE::ActorValue::kBlock},
-            {"kHeavyArmor", RE::ActorValue::kHeavyArmor},
-            {"kLightArmor", RE::ActorValue::kLightArmor},
-            {"kArchery", RE::ActorValue::kArchery},
-            {"kDestruction", RE::ActorValue::kDestruction},
-            {"kRestoration", RE::ActorValue::kRestoration},
-            {"kAlteration", RE::ActorValue::kAlteration},
-            {"kConjuration", RE::ActorValue::kConjuration},
-            {"kIllusion", RE::ActorValue::kIllusion},
-            {"kSneak", RE::ActorValue::kSneak},
-            {"kLockpicking", RE::ActorValue::kLockpicking},
-            {"kPickpocket", RE::ActorValue::kPickpocket},
-            {"kSpeech", RE::ActorValue::kSpeech},
-            {"kAlchemy", RE::ActorValue::kAlchemy},
-            {"kSmithing", RE::ActorValue::kSmithing},
-            {"kEnchanting", RE::ActorValue::kEnchanting}
+            {"Health", RE::ActorValue::kHealth},
+            {"Magicka", RE::ActorValue::kMagicka},
+            {"Stamina", RE::ActorValue::kStamina},
+            {"UnarmedDamage", RE::ActorValue::kUnarmedDamage},
+            {"DamageResist", RE::ActorValue::kDamageResist},
+            {"OneHanded", RE::ActorValue::kOneHanded},
+            {"TwoHanded", RE::ActorValue::kTwoHanded},
+            {"Block", RE::ActorValue::kBlock},
+            {"HeavyArmor", RE::ActorValue::kHeavyArmor},
+            {"LightArmor", RE::ActorValue::kLightArmor},
+            {"Archery", RE::ActorValue::kArchery},
+            {"Destruction", RE::ActorValue::kDestruction},
+            {"Restoration", RE::ActorValue::kRestoration},
+            {"Alteration", RE::ActorValue::kAlteration},
+            {"Conjuration", RE::ActorValue::kConjuration},
+            {"Illusion", RE::ActorValue::kIllusion},
+            {"Sneak", RE::ActorValue::kSneak},
+            {"Lockpicking", RE::ActorValue::kLockpicking},
+            {"Pickpocket", RE::ActorValue::kPickpocket},
+            {"Speech", RE::ActorValue::kSpeech},
+            {"Alchemy", RE::ActorValue::kAlchemy},
+            {"Smithing", RE::ActorValue::kSmithing},
+            {"Enchanting", RE::ActorValue::kEnchanting}
         };
         
         auto it = map.find(str);
@@ -53,22 +53,22 @@ namespace {
         Profile profile;
         if (jProfile.contains("Attributes")) {
             for (const auto& attr : jProfile["Attributes"]) 
-                profile.Attributes.push_back(StringToActorValue(attr));
+                profile.attributes.push_back(StringToActorValue(attr));
             profile.overrideAttributes = true;
         }
         if (jProfile.contains("Skills")) {
             for (const auto& skill : jProfile["Skills"]) 
-                profile.Skills.push_back(StringToActorValue(skill));
+                profile.skills.push_back(StringToActorValue(skill));
             profile.overrideSkills = true;
         }
         if (jProfile.contains("BaseValues")) {
             for (auto& [key, value] : jProfile["BaseValues"].items()) {
-                profile.BaseValues[StringToActorValue(key)] = value.get<float>();
+                profile.baseValues[StringToActorValue(key)] = value.get<float>();
             }
         }
         
-        profile.All = profile.Attributes;
-        profile.All.insert(profile.All.end(), profile.Skills.begin(), profile.Skills.end());
+        profile.all = profile.attributes;
+        profile.all.insert(profile.all.end(), profile.skills.begin(), profile.skills.end());
         
         return profile;
     }
@@ -83,17 +83,17 @@ namespace {
 
     void MergeProfile(Profile& target, const Profile& source) {
         if (source.overrideAttributes) {
-            target.Attributes = source.Attributes;
+            target.attributes = source.attributes;
         }
         if (source.overrideSkills) {
-            target.Skills = source.Skills;
+            target.skills = source.skills;
         }
         if (source.overrideAttributes || source.overrideSkills) {
-            target.All = target.Attributes;
-            target.All.insert(target.All.end(), target.Skills.begin(), target.Skills.end());
+            target.all = target.attributes;
+            target.all.insert(target.all.end(), target.skills.begin(), target.skills.end());
         }
-        for (const auto& [av, value] : source.BaseValues) {
-            target.BaseValues[av] = value;
+        for (const auto& [av, value] : source.baseValues) {
+            target.baseValues[av] = value;
         }
     }
 }
@@ -101,14 +101,14 @@ namespace {
 namespace ProfileRepository {
     
     void InitializeFromJson(const nlohmann::json& config) {
-        TagProfiles.clear();
-        RaceProfiles.clear();
-        ActorProfiles.clear();
+        tagProfiles.clear();
+        raceProfiles.clear();
+        actorProfiles.clear();
 
-        DefaultHumanoidProfile.Attributes = {
+        defaultHumanoidProfile.attributes = {
             RE::ActorValue::kHealth, RE::ActorValue::kMagicka, RE::ActorValue::kStamina
         };
-        DefaultHumanoidProfile.Skills = {
+        defaultHumanoidProfile.skills = {
             RE::ActorValue::kOneHanded, RE::ActorValue::kTwoHanded, RE::ActorValue::kBlock,
             RE::ActorValue::kHeavyArmor, RE::ActorValue::kLightArmor, RE::ActorValue::kArchery,
             RE::ActorValue::kDestruction, RE::ActorValue::kRestoration, RE::ActorValue::kAlteration,
@@ -117,22 +117,22 @@ namespace ProfileRepository {
             RE::ActorValue::kSpeech, RE::ActorValue::kAlchemy, RE::ActorValue::kSmithing,
             RE::ActorValue::kEnchanting
         };
-        DefaultHumanoidProfile.All = DefaultHumanoidProfile.Attributes;
-        DefaultHumanoidProfile.All.insert(
-            DefaultHumanoidProfile.All.end(), 
-            DefaultHumanoidProfile.Skills.begin(), 
-            DefaultHumanoidProfile.Skills.end()
+        defaultHumanoidProfile.all = defaultHumanoidProfile.attributes;
+        defaultHumanoidProfile.all.insert(
+            defaultHumanoidProfile.all.end(), 
+            defaultHumanoidProfile.skills.begin(), 
+            defaultHumanoidProfile.skills.end()
         );
 
-        LoadProfileCategory(config, "Tags", TagProfiles);
-        LoadProfileCategory(config, "Races", RaceProfiles);
-        LoadProfileCategory(config, "Actors", ActorProfiles);
+        LoadProfileCategory(config, "Tags", tagProfiles);
+        LoadProfileCategory(config, "Races", raceProfiles);
+        LoadProfileCategory(config, "Actors", actorProfiles);
     }
 
-    const std::unordered_map<std::string, Profile>& GetTagProfiles() { return TagProfiles; }
-    const std::unordered_map<std::string, Profile>& GetRaceProfiles() { return RaceProfiles; }
-    const std::unordered_map<std::string, Profile>& GetActorProfiles() { return ActorProfiles; }
-    const Profile& GetDefaultProfile() { return DefaultHumanoidProfile; }
+    const std::unordered_map<std::string, Profile>& GetTagProfiles() { return tagProfiles; }
+    const std::unordered_map<std::string, Profile>& GetRaceProfiles() { return raceProfiles; }
+    const std::unordered_map<std::string, Profile>& GetActorProfiles() { return actorProfiles; }
+    const Profile& GetDefaultProfile() { return defaultHumanoidProfile; }
 }
 
 namespace ProfileParser {

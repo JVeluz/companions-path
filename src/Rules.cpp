@@ -21,7 +21,7 @@ namespace Rules {
     
         bool IsAttribute(RE::Actor* actor, RE::ActorValue actorValue) {
             Profile profile = ProfileParser::GetProfile(actor);
-            return std::find(profile.Attributes.begin(), profile.Attributes.end(), actorValue) != profile.Attributes.end();
+            return std::find(profile.attributes.begin(), profile.attributes.end(), actorValue) != profile.attributes.end();
         }
     
         int GetMaxValue(RE::Actor* actor, RE::ActorValue actorValue) {
@@ -41,8 +41,8 @@ namespace Rules {
         float GetBaseValue(RE::Actor* actor, RE::ActorValue actorValue) {
             Profile profile = ProfileParser::GetProfile(actor);
             
-            auto it = profile.BaseValues.find(actorValue);
-            if (it != profile.BaseValues.end()) {
+            auto it = profile.baseValues.find(actorValue);
+            if (it != profile.baseValues.end()) {
                 return it->second;
             }
     

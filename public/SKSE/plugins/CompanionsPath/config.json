@@ -4,126 +4,126 @@
   "Tags": {
     "Creature": {
       "Attributes": [
-        "kHealth",
-        "kStamina"
+        "Health",
+        "Stamina"
       ],
       "Skills": [
-        "kUnarmedDamage",
-        "kDamageResist"
+        "UnarmedDamage",
+        "DamageResist"
       ],
       "BaseValues": {
-        "kHealth": 100.0,
-        "kMagicka": 0.0,
-        "kStamina": 100.0
+        "Health": 100.0,
+        "Magicka": 0.0,
+        "Stamina": 100.0
       }
     }
   },
   "Races": {
     "Argonian": {
       "BaseValues": {
-        "kLockpicking": 25.0,
-        "kAlteration": 20.0,
-        "kLightArmor": 20.0,
-        "kPickpocket": 20.0,
-        "kRestoration": 20.0,
-        "kSneak": 20.0
+        "Lockpicking": 25.0,
+        "Alteration": 20.0,
+        "LightArmor": 20.0,
+        "Pickpocket": 20.0,
+        "Restoration": 20.0,
+        "Sneak": 20.0
       }
     },
     "Breton": {
       "BaseValues": {
-        "kConjuration": 25.0,
-        "kAlchemy": 20.0,
-        "kAlteration": 20.0,
-        "kIllusion": 20.0,
-        "kRestoration": 20.0,
-        "kSpeech": 20.0
+        "Conjuration": 25.0,
+        "Alchemy": 20.0,
+        "Alteration": 20.0,
+        "Illusion": 20.0,
+        "Restoration": 20.0,
+        "Speech": 20.0
       }
     },
     "DarkElf": {
       "BaseValues": {
-        "kDestruction": 25.0,
-        "kAlchemy": 20.0,
-        "kAlteration": 20.0,
-        "kIllusion": 20.0,
-        "kLightArmor": 20.0,
-        "kSneak": 20.0
+        "Destruction": 25.0,
+        "Alchemy": 20.0,
+        "Alteration": 20.0,
+        "Illusion": 20.0,
+        "LightArmor": 20.0,
+        "Sneak": 20.0
       }
     },
     "HighElf": {
       "BaseValues": {
-        "kMagicka": 150.0,
-        "kIllusion": 25.0,
-        "kAlteration": 20.0,
-        "kConjuration": 20.0,
-        "kDestruction": 20.0,
-        "kEnchanting": 20.0,
-        "kRestoration": 20.0
+        "Magicka": 150.0,
+        "Illusion": 25.0,
+        "Alteration": 20.0,
+        "Conjuration": 20.0,
+        "Destruction": 20.0,
+        "Enchanting": 20.0,
+        "Restoration": 20.0
       }
     },
     "Imperial": {
       "BaseValues": {
-        "kRestoration": 25.0,
-        "kBlock": 20.0,
-        "kDestruction": 20.0,
-        "kEnchanting": 20.0,
-        "kHeavyArmor": 20.0,
-        "kOneHanded": 20.0
+        "Restoration": 25.0,
+        "Block": 20.0,
+        "Destruction": 20.0,
+        "Enchanting": 20.0,
+        "HeavyArmor": 20.0,
+        "OneHanded": 20.0
       }
     },
-    "Khajiit": {
+    "hajiit": {
       "BaseValues": {
-        "kSneak": 25.0,
-        "kAlchemy": 20.0,
-        "kArchery": 20.0,
-        "kLockpicking": 20.0,
-        "kPickpocket": 20.0,
-        "kOneHanded": 20.0
+        "Sneak": 25.0,
+        "Alchemy": 20.0,
+        "Archery": 20.0,
+        "Lockpicking": 20.0,
+        "Pickpocket": 20.0,
+        "OneHanded": 20.0
       }
     },
     "Nord": {
       "BaseValues": {
-        "kTwoHanded": 25.0,
-        "kBlock": 20.0,
-        "kLightArmor": 20.0,
-        "kOneHanded": 20.0,
-        "kSmithing": 20.0,
-        "kSpeech": 20.0
+        "TwoHanded": 25.0,
+        "Block": 20.0,
+        "LightArmor": 20.0,
+        "OneHanded": 20.0,
+        "Smithing": 20.0,
+        "Speech": 20.0
       }
     },
     "Orc": {
       "BaseValues": {
-        "kHeavyArmor": 25.0,
-        "kBlock": 20.0,
-        "kEnchanting": 20.0,
-        "kOneHanded": 20.0,
-        "kSmithing": 20.0,
-        "kTwoHanded": 20.0
+        "HeavyArmor": 25.0,
+        "Block": 20.0,
+        "Enchanting": 20.0,
+        "OneHanded": 20.0,
+        "Smithing": 20.0,
+        "TwoHanded": 20.0
       }
     },
     "Redguard": {
       "BaseValues": {
-        "kOneHanded": 25.0,
-        "kAlteration": 20.0,
-        "kArchery": 20.0,
-        "kBlock": 20.0,
-        "kDestruction": 20.0,
-        "kSmithing": 20.0
+        "OneHanded": 25.0,
+        "Alteration": 20.0,
+        "Archery": 20.0,
+        "Block": 20.0,
+        "Destruction": 20.0,
+        "Smithing": 20.0
       }
     },
     "WoodElf": {
       "BaseValues": {
-        "kArchery": 25.0,
-        "kAlchemy": 20.0,
-        "kLightArmor": 20.0,
-        "kLockpicking": 20.0,
-        "kPickpocket": 20.0,
-        "kSneak": 20.0
+        "Archery": 25.0,
+        "Alchemy": 20.0,
+        "LightArmor": 20.0,
+        "Lockpicking": 20.0,
+        "Pickpocket": 20.0,
+        "Sneak": 20.0
       }
     },
     "Troll": {
       "BaseValues": {
-        "kHealth": 250.0,
-        "kStamina": 150.0
+        "Health": 250.0,
+        "Stamina": 150.0
       }
     }
   }

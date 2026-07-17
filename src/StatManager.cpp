@@ -56,22 +56,22 @@ namespace StatManager {
 
     int GetRemainingAttributePoints(RE::Actor* actor) { 
         int total = Rules::Stats::GetAttributePoints(actor);
-        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Attributes);
+        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).attributes);
         return total - spent; 
     }
 
     int GetRemainingSkillPoints(RE::Actor* actor) {
         int total = Rules::Stats::GetSkillPoints(actor);
-        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).Skills);
+        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).skills);
         return total - spent; 
     }
 
     void ResetAttributes(RE::Actor* actor) { 
-        Reset(actor, ProfileParser::GetProfile(actor).Attributes); 
+        Reset(actor, ProfileParser::GetProfile(actor).attributes); 
     }
 
     void ResetSkills(RE::Actor* actor) { 
-        Reset(actor, ProfileParser::GetProfile(actor).Skills); 
+        Reset(actor, ProfileParser::GetProfile(actor).skills); 
     }
 
     bool HasPointsLeft(RE::Actor* actor, RE::ActorValue actorValue) {
@@ -100,12 +100,12 @@ namespace StatManager {
                 if (auto actor = actorPtr.get()) {
                     auto profile = ProfileParser::GetProfile(actor);
                     
-                    for (const auto& actorValue : profile.All) {
+                    for (const auto& actorValue : profile.all) {
                         SetStat(actor, actorValue, Storage::Stats::GetPoints(actor, actorValue));
                     }
 
-                    for (const auto& [actorValue, baseValue] : profile.BaseValues) {
-                        if (std::find(profile.All.begin(), profile.All.end(), actorValue) == profile.All.end()) {
+                    for (const auto& [actorValue, baseValue] : profile.baseValues) {
+                        if (std::find(profile.all.begin(), profile.all.end(), actorValue) == profile.all.end()) {
                             ApplyStatValue(actor, actorValue, baseValue);
                         }
                     }

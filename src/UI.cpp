@@ -191,7 +191,7 @@ namespace UI {
 
             ImGuiMCP::Columns(3, "AttributesColumns", false);
 
-            for (const auto& attr : profile.Attributes) {
+            for (const auto& attr : profile.attributes) {
                 RenderStatRow(selectedActor, attr);
                 ImGuiMCP::NextColumn();
             }
@@ -207,7 +207,7 @@ namespace UI {
 
             ImGuiMCP::Columns(3, "StatsColumns", false);
 
-            for (const auto& skill : profile.Skills) {
+            for (const auto& skill : profile.skills) {
                 RenderStatRow(selectedActor, skill);
                 ImGuiMCP::Spacing();
                 ImGuiMCP::Spacing();
@@ -316,7 +316,7 @@ namespace UI {
             auto selectedActor = selectedActorNiPtr.get();
             auto profile = ProfileParser::GetProfile(selectedActor);
 
-            if (profile.Skills.empty()) {
+            if (profile.skills.empty()) {
                 ImGuiMCP::Text("Aucune competence pour ce profil.");
                 return;
             }
@@ -327,12 +327,12 @@ namespace UI {
             ImGuiMCP::Spacing();
 
             static int selectedSkillIndex = 0;
-            if (selectedSkillIndex >= profile.Skills.size()) {
+            if (selectedSkillIndex >= profile.skills.size()) {
                 selectedSkillIndex = 0;
             }
 
             std::vector<const char*> skillNames;
-            for (auto skill : profile.Skills) {
+            for (auto skill : profile.skills) {
                 skillNames.push_back(GetActorValueName(skill));
             }
 
@@ -343,28 +343,28 @@ namespace UI {
             ImGuiMCP::Spacing();
 
             // --- 3. RECUPERATION ET TRI DES PERKS ---
-            RE::ActorValue currentSkill = profile.Skills[selectedSkillIndex];
+            RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
             const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
 
-            if (!tree || tree->Nodes.empty()) {
+            if (!tree || tree->nodes.empty()) {
                 ImGuiMCP::Text("Aucun perk trouve pour cette competence.");
                 return;
             }
 
             std::vector<Perks::PerkNode*> sortedNodes;
-            for (const auto& node : tree->Nodes) {
+            for (const auto& node : tree->nodes) {
                 sortedNodes.push_back(node.get());
             }
 
             std::sort(sortedNodes.begin(), sortedNodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) {
-                int reqA = a->RankRequirements.empty() ? 0 : a->RankRequirements[0];
-                int reqB = b->RankRequirements.empty() ? 0 : b->RankRequirements[0];
+                int reqA = a->rankRequirements.empty() ? 0 : a->rankRequirements[0];
+                int reqB = b->rankRequirements.empty() ? 0 : b->rankRequirements[0];
                 return reqA < reqB;
             });
 
             // --- 4. AFFICHAGE DES BOUTONS ---
             for (auto* node : sortedNodes) {
-                if (node->Ranks.empty()) continue;
+                if (node->ranks.empty()) continue;
 
                 int currentRank = PerkManager::GetCurrentRank(selectedActor, node);
                 bool isMaxedOut = PerkManager::IsMaxedOut(selectedActor, node);
@@ -377,7 +377,7 @@ namespace UI {
                     ImGuiMCP::BeginDisabled();
                 }
 
-                std::string btnText = node->Name + " (" + std::to_string(currentRank) + "/" + std::to_string(node->MaxRanks) + ") ";
+                std::string btnText = node->name + " (" + std::to_string(currentRank) + "/" + std::to_string(node->maxRanks) + ") ";
                 btnText += isMaxedOut ? "[Max]" : "(Niv. " + std::to_string(nextReqLevel) + ")";
 
                 if (ImGuiMCP::Button(btnText.c_str())) {
@@ -392,7 +392,7 @@ namespace UI {
 
                 if (canRefund) {
                     ImGuiMCP::SameLine();
-                    ImGuiMCP::PushID(node->Ranks[0]->GetFormID());
+                    ImGuiMCP::PushID(node->ranks[0]->GetFormID());
 
                     if (ImGuiMCP::Button(" - ")) {
                         PerkManager::Refund(selectedActor, node);
