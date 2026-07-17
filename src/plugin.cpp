@@ -15,7 +15,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
 
         EventManager::Register();
         
-        PerkManager::InitializeTrees();
+        PerkManager::Initialize();
 
         ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
         

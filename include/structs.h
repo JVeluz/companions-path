@@ -17,23 +17,20 @@ struct Profile {
 namespace Perks {
 
     struct PerkNode {
-        RE::BGSPerk* Form = nullptr;                // Pointeur vers le Perk original dans le jeu
-        std::string Name;                           // Nom récupéré pour un accès facile
-        RE::ActorValue AssociatedSkill;             // Le skill auquel il appartient
-        int RequiredSkillLevel = 0;                 // Niveau requis dans le skill
-        int MaxRanks = 1;                           // Nombre de fois qu'on peut l'acheter
+        std::string Name;
+        RE::ActorValue AssociatedSkill;
+        int MaxRanks = 1;
+        
+        std::vector<RE::BGSPerk*> Ranks;
+        std::vector<int> RankRequirements;
 
-        std::vector<PerkNode*> Parents;             // Les perks qu'il faut posséder AVANT
-        std::vector<PerkNode*> Children;            // Les perks débloqués PAR celui-ci
+        std::vector<PerkNode*> Parents;
+        std::vector<PerkNode*> Children;
     };
-
+    
     struct PerkTree {
         RE::ActorValue Skill = RE::ActorValue::kNone;
-        
-        // On possède les noeuds ici pour gérer la mémoire facilement
-        std::vector<std::unique_ptr<PerkNode>> Nodes; 
-        
-        // Pointers rapides vers les points d'entrée de l'arbre (ceux sans parents)
-        std::vector<PerkNode*> RootNodes; 
+        std::vector<std::unique_ptr<PerkNode>> Nodes;
+        std::vector<PerkNode*> RootNodes;
     };
 }
