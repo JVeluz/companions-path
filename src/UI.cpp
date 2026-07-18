@@ -417,15 +417,15 @@ namespace UI {
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
                 FollowerManager::RefreshFollowers();
-                selectedCompanionIndex = 0;
                 StatManager::Harmonize();
+                selectedCompanionIndex = 0;
             }
             
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
+            if (selectedCompanionIndex >= followers.size()) selectedCompanionIndex = 0;
 
             auto selectedActorNiPtr = FollowerManager::GetActorPtr(selectedCompanionIndex);
             if (!selectedActorNiPtr) {
