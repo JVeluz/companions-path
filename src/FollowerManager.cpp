@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "FollowerManager.h"
 
 namespace {
     std::vector<RE::ActorHandle> activeFollowers;
@@ -8,7 +8,11 @@ namespace {
     }
 }
 
-namespace Utils {
+namespace FollowerManager {
+
+    bool IsUniqueNPC(RE::Actor* actor) {
+        return actor->GetActorBase()->IsUnique(); 
+    }
 
     void RefreshFollowers() {
         auto followerFaction = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESFaction>(0x5C84E, "Skyrim.esm");

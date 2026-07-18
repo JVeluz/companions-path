@@ -15,6 +15,7 @@ namespace Storage {
         void RecordPurchase(RE::Actor* actor, RE::BGSPerk* perk);
         void RecordRefund(RE::Actor* actor, RE::BGSPerk* perk);
         bool HasPurchased(RE::Actor* actor, RE::BGSPerk* perk);
+        std::size_t GetPurchasedCount(RE::Actor* actor);
         std::vector<RE::BGSPerk*> GetPurchased(RE::Actor* actor);
         void Clear(RE::Actor* actor);
     }

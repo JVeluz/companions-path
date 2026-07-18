@@ -171,6 +171,15 @@ namespace Storage {
             return false;
         }
 
+        std::size_t GetPurchasedCount(RE::Actor* actor) {
+            if (!actor) return 0;
+            auto it = storage.find(actor->GetFormID());
+            if (it != storage.end()) {
+                return it->second.purchasedPerkFormIDs.size();
+            }
+            return 0;
+        }
+
         std::vector<RE::BGSPerk*> GetPurchased(RE::Actor* actor) {
             std::vector<RE::BGSPerk*> result;
             if (!actor) return result;

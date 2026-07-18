@@ -1,7 +1,7 @@
 #include "StatManager.h"
 #include "Storage.h"
 #include "Rules.h"
-#include "Utils.h"
+#include "FollowerManager.h"
 #include "profile.h"
 
 #include <algorithm>
@@ -95,7 +95,7 @@ namespace StatManager {
     }
 
     void Harmonize() {
-        for (auto& handle : Utils::GetActiveFollowers()) {
+        for (auto& handle : FollowerManager::GetActiveFollowers()) {
             if (auto actorPtr = handle.get()) {
                 if (auto actor = actorPtr.get()) {
                     auto profile = ProfileParser::GetProfile(actor);

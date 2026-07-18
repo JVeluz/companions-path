@@ -65,7 +65,9 @@ namespace ConfigManager {
             try {
                 inFile >> config;
             } catch (const json::parse_error& e) {
-                logger::warn("Failed to parse existing config before saving, creating a new one. Error: {}", e.what());
+                logger::error("Failed to parse existing config before saving. Aborting save to prevent data loss. Error: {}", e.what());
+                inFile.close();
+                return;
             }
             inFile.close();
         }

@@ -9,7 +9,7 @@
 #include "PerkManager.h"
 #include "Rules.h"
 #include "StatManager.h"
-#include "Utils.h"
+#include "FollowerManager.h"
 #include "language.h"
 #include "profile.h"
 #include "structs.h"
@@ -126,7 +126,7 @@ namespace UI {
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
             
-            auto followers = Utils::GetActiveFollowers();
+            auto followers = FollowerManager::GetActiveFollowers();
             
             if (followers.empty()) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
@@ -151,7 +151,7 @@ namespace UI {
 
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
-                Utils::RefreshFollowers();
+                FollowerManager::RefreshFollowers();
                 selectedCompanionIndex = 0;
                 StatManager::Harmonize();
             }
@@ -163,7 +163,7 @@ namespace UI {
             if (followers.empty()) return;
             if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
 
-            auto selectedActorNiPtr = Utils::GetActorPtr(selectedCompanionIndex);
+            auto selectedActorNiPtr = FollowerManager::GetActorPtr(selectedCompanionIndex);
             if (!selectedActorNiPtr) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_ACTOR_INVALID"));
                 return;
@@ -241,6 +241,8 @@ namespace UI {
             bool harmonize = ConfigManager::GetHarmonize();
             if (ImGuiMCP::Checkbox(TranslationService::GetString("UI_SETTING_HARMONIZE"), &harmonize)) {
                 ConfigManager::SetHarmonize(harmonize);
+                StatManager::Harmonize();
+                PerkManager::Harmonize(harmonize);
             }
 
             ImGuiMCP::Spacing();
@@ -387,7 +389,7 @@ namespace UI {
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
             
-            auto followers = Utils::GetActiveFollowers();
+            auto followers = FollowerManager::GetActiveFollowers();
 
             if (followers.empty()) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
@@ -414,7 +416,7 @@ namespace UI {
             
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
-                Utils::RefreshFollowers();
+                FollowerManager::RefreshFollowers();
                 selectedCompanionIndex = 0;
                 StatManager::Harmonize();
             }
@@ -425,13 +427,19 @@ namespace UI {
 
             if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
 
-            auto selectedActorNiPtr = Utils::GetActorPtr(selectedCompanionIndex);
+            auto selectedActorNiPtr = FollowerManager::GetActorPtr(selectedCompanionIndex);
             if (!selectedActorNiPtr) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_ACTOR_INVALID"));
                 return;
             }
 
             auto selectedActor = selectedActorNiPtr.get();
+
+            if (!FollowerManager::IsUniqueNPC(selectedActor)) {
+                ImGuiMCP::Text(TranslationService::GetString("UI_ERROR_GENERIC_NPC"));
+                return;
+            }
+
             auto profile = ProfileParser::GetProfile(selectedActor);
 
             if (profile.skills.empty()) {

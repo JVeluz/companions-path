@@ -41,6 +41,7 @@
   "UI_REFRESH_FOLLOWERS": "Refresh Followers",
   "UI_RELOAD_CONFIG": "Reload Config",
   "UI_ACTOR_INVALID": "Actor is currently unloaded or invalid.",
+  "UI_ERROR_GENERIC_NPC": "Perks cannot be modified for generic NPCs.",
   
   "UI_LEVEL": "Level : %d",
   "UI_ATTRIBUTES": "Attributes (%d / %d)",

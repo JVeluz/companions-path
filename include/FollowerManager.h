@@ -2,7 +2,8 @@
 
 #include <vector>
 
-namespace Utils {
+namespace FollowerManager {
+    bool IsUniqueNPC(RE::Actor* actor);
     void RefreshFollowers();
     RE::ActorPtr GetActorPtr(int index);
     RE::Actor* GetActor(int index);

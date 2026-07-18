@@ -1,6 +1,6 @@
 #include "PerkManager.h"
 
-#include "Utils.h"
+#include "FollowerManager.h"
 #include "Rules.h"
 #include "StatManager.h"
 #include "Storage.h"
@@ -189,7 +189,7 @@ namespace PerkManager {
 
     int GetRemainingPoints(RE::Actor* actor) {
         int total = PerkManager::GetPoints(actor);
-        int spent = static_cast<int>(Storage::Perks::GetPurchased(actor).size());
+        int spent = static_cast<int>(Storage::Perks::GetPurchasedCount(actor));
         return total - spent;
     }
 
@@ -278,7 +278,7 @@ namespace PerkManager {
 
     void Harmonize(bool harmonizeActive) {
         
-        for (auto& handle : Utils::GetActiveFollowers()) {
+        for (auto& handle : FollowerManager::GetActiveFollowers()) {
             if (auto actorPtr = handle.get()) {
                 if (auto actor = actorPtr.get()) {
                     for (const auto& [av, tree] : perkTrees) {

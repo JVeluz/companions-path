@@ -41,6 +41,7 @@
     "UI_REFRESH_FOLLOWERS": "Actualiser les compagnons",
     "UI_RELOAD_CONFIG": "Recharger la configuration",
     "UI_ACTOR_INVALID": "L'acteur est actuellement non chargé ou invalide.",
+    "UI_ERROR_GENERIC_NPC": "Les atouts ne peuvent pas être modifiés pour les PNJ génériques.",
     
     "UI_LEVEL": "Niveau : %d",
     "UI_ATTRIBUTES": "Attributs (%d / %d)",

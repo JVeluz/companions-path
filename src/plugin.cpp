@@ -1,12 +1,13 @@
-#include "Logger.h"
-#include "UI.h"
-#include "Utils.h"
-#include "EventManager.h"
-#include "StatManager.h"
-#include "PerkManager.h"
 #include "ConfigManager.h"
-#include "profile.h"
+#include "EventManager.h"
+#include "Logger.h"
+#include "PerkManager.h"
+#include "StatManager.h"
+#include "Storage.h"
+#include "UI.h"
+#include "FollowerManager.h"
 #include "language.h"
+#include "profile.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     switch (message->type) {
@@ -15,14 +16,15 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
             std::string gameLanguage = setting ? setting->GetString() : "english";
             LanguageRepository::LoadLanguage(gameLanguage);
             EventManager::Register();
+            Storage::Register();
             PerkManager::Initialize();
             ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
-            UI::Register(); 
+            UI::Register();
             break;
         }
         case SKSE::MessagingInterface::kPostLoadGame:
         case SKSE::MessagingInterface::kNewGame: {
-            Utils::RefreshFollowers(); 
+            FollowerManager::RefreshFollowers();
             StatManager::Harmonize();
             PerkManager::Harmonize(ConfigManager::GetHarmonize());
             break;
@@ -30,7 +32,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
     }
 }
 
-SKSEPluginLoad(const SKSE::LoadInterface *skse) {
+SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
     SetupLog();
     logger::info("Plugin loaded");
