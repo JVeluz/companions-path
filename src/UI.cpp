@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <map>
 
 #include "ConfigManager.h"
 #include "PerkManager.h"
@@ -13,8 +15,6 @@
 #include "structs.h"
 
 namespace {
-    std::vector<RE::ActorHandle> currentFollowers;
-
     const char* GetActorValueName(RE::ActorValue actorValue) {
         switch (actorValue) {
             case RE::ActorValue::kHealth:
@@ -125,13 +125,16 @@ namespace UI {
 
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
-            if (currentFollowers.empty()) {
+            
+            auto followers = Utils::GetActiveFollowers();
+            
+            if (followers.empty()) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
             } else {
                 std::vector<const char*> names;
                 static std::string unloadedStr = TranslationService::GetString("UI_UNKNOWN_UNLOADED");
 
-                for (auto& handle : currentFollowers) {
+                for (auto& handle : followers) {
                     auto actorPtr = handle.get();
                     if (actorPtr) {
                         if (auto actorBase = actorPtr->GetActorBase()) {
@@ -148,25 +151,19 @@ namespace UI {
 
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
-                currentFollowers = Utils::GetActiveFollowers();
+                Utils::RefreshFollowers();
                 selectedCompanionIndex = 0;
                 StatManager::Harmonize();
             }
 
-            ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button(TranslationService::GetString("UI_RELOAD_CONFIG"))) {
-                ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
-                StatManager::Harmonize();
-            }
-
             ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (currentFollowers.empty()) return;
-            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= currentFollowers.size()) return;
+            if (followers.empty()) return;
+            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
 
-            auto selectedActorNiPtr = currentFollowers[selectedCompanionIndex].get();
+            auto selectedActorNiPtr = Utils::GetActorPtr(selectedCompanionIndex);
             if (!selectedActorNiPtr) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_ACTOR_INVALID"));
                 return;
@@ -183,7 +180,7 @@ namespace UI {
             ImGuiMCP::Text(TranslationService::GetString("UI_LEVEL"), selectedActor->GetLevel());
 
             ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
             ImGuiMCP::Text(TranslationService::GetString("UI_ATTRIBUTES"), remainingAttributePoints, maxAttributePoints);
@@ -199,7 +196,7 @@ namespace UI {
             ImGuiMCP::Columns(1);
 
             ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
             ImGuiMCP::Text(TranslationService::GetString("UI_SKILLS"), remainingSkillPoints, maxSkillPoints);
@@ -211,18 +208,13 @@ namespace UI {
                 RenderStatRow(selectedActor, skill);
                 ImGuiMCP::Spacing();
                 ImGuiMCP::Spacing();
-                ImGuiMCP::Spacing();
                 ImGuiMCP::NextColumn();
             }
 
             ImGuiMCP::Columns(1);
 
             ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
-
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
             if (ImGuiMCP::Button(TranslationService::GetString("UI_RESET_ATTRIBUTES"))) {
@@ -237,59 +229,175 @@ namespace UI {
         }
     }
 
+    namespace Settings {
+        void __stdcall Render() {
+            
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button(TranslationService::GetString("UI_RELOAD_CONFIG"))) {
+                ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
+                StatManager::Harmonize();
+            }
+
+            bool harmonize = ConfigManager::GetHarmonize();
+            if (ImGuiMCP::Checkbox(TranslationService::GetString("UI_SETTING_HARMONIZE"), &harmonize)) {
+                ConfigManager::SetHarmonize(harmonize);
+            }
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            static int currentLangIndex = -1;
+
+            if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_LANGUAGES"))) {
+                LanguageRepository::ScanAvailableLanguages();
+                currentLangIndex = -1; 
+            }
+
+            ImGuiMCP::Spacing();
+
+            const auto& availableLanguages = LanguageRepository::GetAvailableLanguages();
+            
+            if (!availableLanguages.empty()) {
+                if (currentLangIndex == -1) {
+                    std::string currentLang = ConfigManager::GetLanguage();
+                    auto it = std::find(availableLanguages.begin(), availableLanguages.end(), currentLang);
+                    if (it != availableLanguages.end()) {
+                        currentLangIndex = static_cast<int>(std::distance(availableLanguages.begin(), it));
+                    } else {
+                        currentLangIndex = 0;
+                    }
+                }
+
+                std::vector<const char*> langItems;
+                for (const auto& lang : availableLanguages) {
+                    langItems.push_back(lang.c_str());
+                }
+
+                if (ImGuiMCP::Combo(TranslationService::GetString("UI_SETTING_LANGUAGE"), &currentLangIndex, langItems.data(), static_cast<int>(langItems.size()))) {
+                    ConfigManager::SetLanguage(availableLanguages[currentLangIndex]);
+                }
+            } else {
+                ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_LANGUAGE_FILES"));
+            }
+        }
+    }
+
     namespace PerksUI {
 
-        float CalculateActorArmor(RE::Actor* actor) {
-            if (!actor) return 0.0f;
+        void RenderPerkTooltip(const Perks::PerkNode* node, int currentRank) {
+            if (ImGuiMCP::IsItemHovered()) {
+                ImGuiMCP::BeginTooltip();
+                
+                int displayRank = currentRank;
+                if (displayRank >= node->ranks.size()) {
+                    displayRank = static_cast<int>(node->ranks.size()) - 1;
+                }
 
-            // Sécurité : On s'assure de bien récupérer l'interface ActorValueOwner
-            auto avOwner = actor->AsActorValueOwner();
-            if (!avOwner) return 0.0f;
-
-            return avOwner->GetActorValue(RE::ActorValue::kDamageResist);
+                if (displayRank >= 0 && displayRank < node->ranks.size()) {
+                    auto perkForm = node->ranks[displayRank];
+                    if (perkForm) {
+                        RE::BSString perkDesc;
+                        perkForm->GetDescription(perkDesc, perkForm);
+                        ImGuiMCP::PushTextWrapPos(400.0f);
+                        ImGuiMCP::TextWrapped("%s", perkDesc.c_str());
+                        ImGuiMCP::PopTextWrapPos();
+                    }
+                }
+                ImGuiMCP::EndTooltip();
+            }
         }
 
-        float CalculateActorDamage(RE::Actor* actor) {
-            if (!actor) return 0.0f;
-
-            float calculatedDamage = 0.0f;
-
-            // FIX ANTI-CRASH : On vérifie manuellement que la liste d'inventaire
-            // existe bien AVANT d'appeler GetEquippedObject.
-            auto invChanges = actor->GetInventoryChanges();
-            if (!invChanges || !invChanges->entryList) {
-                return 0.0f;  // L'inventaire n'est pas encore prêt, on évite le crash.
+        void RenderPerkSimpleList(RE::Actor* selectedActor, const Perks::PerkTree* tree) {
+            if (!tree || tree->nodes.empty()) {
+                ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_PERKS_FOUND"));
+                return;
             }
 
-            auto rightHandObj = actor->GetEquippedObject(false);
-            if (rightHandObj && rightHandObj->IsWeapon()) {
-                auto weapon = rightHandObj->As<RE::TESObjectWEAP>();
-                if (weapon) {  // Sécurité supplémentaire
-                    float baseDamage = weapon->GetAttackDamage();
+            float currentSkillLevel = StatManager::GetStatValue(selectedActor, tree->skill);
+            ImGuiMCP::Text(TranslationService::GetString("UI_SKILL_LEVEL"), currentSkillLevel);
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
 
-                    auto avOwner = actor->AsActorValueOwner();
-                    float damageMult = avOwner ? avOwner->GetActorValue(RE::ActorValue::kAttackDamageMult) : 1.0f;
-                    if (damageMult == 0.0f) damageMult = 1.0f;
+            std::map<int, std::vector<Perks::PerkNode*>> nodesByLevel;
+            for (const auto& nodePtr : tree->nodes) {
+                auto* node = nodePtr.get();
+                if (node->ranks.empty()) continue;
+                
+                int reqLevel = node->rankRequirements.empty() ? 0 : node->rankRequirements[0];
+                nodesByLevel[reqLevel].push_back(node);
+            }
 
-                    calculatedDamage = baseDamage * damageMult;
+            for (auto& [reqLevel, nodes] : nodesByLevel) {
+                
+                std::sort(nodes.begin(), nodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) {
+                    return a->horizontalPosition < b->horizontalPosition;
+                });
+
+                ImGuiMCP::Text(TranslationService::GetString("UI_PERK_LEVEL"), reqLevel);
+                ImGuiMCP::Separator();
+                ImGuiMCP::Spacing();
+
+                for (size_t i = 0; i < nodes.size(); ++i) {
+                    auto* node = nodes[i];
+
+                    int currentRank = PerkManager::GetCurrentRank(selectedActor, node);
+                    bool isMaxedOut = PerkManager::IsMaxedOut(selectedActor, node);
+                    bool canBuy = PerkManager::CanPurchase(selectedActor, node);
+                    bool canRefund = PerkManager::CanRefund(selectedActor, node);
+
+                    ImGuiMCP::PushID(node->ranks[0]->GetFormID());
+
+                    if (!canBuy && !isMaxedOut) {
+                        ImGuiMCP::BeginDisabled();
+                    }
+
+                    std::string btnText = node->name + " (" + std::to_string(currentRank) + "/" + std::to_string(node->maxRanks) + ")";
+                    if (ImGuiMCP::Button(btnText.c_str())) {
+                        if (canBuy) PerkManager::Purchase(selectedActor, node);
+                    }
+
+                    if (!canBuy && !isMaxedOut) {
+                        ImGuiMCP::EndDisabled();
+                    }
+
+                    ImGuiMCP::SameLine();
+                    ImGuiMCP::TextDisabled("(?)");
+                    RenderPerkTooltip(node, currentRank);
+
+                    if (canRefund) {
+                        ImGuiMCP::SameLine();
+                        if (ImGuiMCP::Button(" - ")) {
+                            PerkManager::Refund(selectedActor, node);
+                        }
+                    }
+
+                    ImGuiMCP::PopID();
+
+                    if (i < nodes.size() - 1) {
+                        ImGuiMCP::SameLine(0.0f, 15.0f);
+                    }
                 }
+                ImGuiMCP::Spacing();
+                ImGuiMCP::Spacing();
             }
-            return calculatedDamage;
         }
 
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
+            
+            auto followers = Utils::GetActiveFollowers();
 
-            if (currentFollowers.empty()) {
+            if (followers.empty()) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
                 return;
             }
 
-            // --- 1. SELECTION DU COMPAGNON ---
             std::vector<const char*> names;
             static std::string unloadedStr = TranslationService::GetString("UI_UNKNOWN_UNLOADED");
 
-            for (auto& handle : currentFollowers) {
+            for (auto& handle : followers) {
                 auto actorPtr = handle.get();
                 if (actorPtr) {
                     if (auto actorBase = actorPtr->GetActorBase()) {
@@ -301,13 +409,23 @@ namespace UI {
                     names.push_back(unloadedStr.c_str());
                 }
             }
+            
             ImGuiMCP::Combo("##TargetPerks", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
+            
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
+                Utils::RefreshFollowers();
+                selectedCompanionIndex = 0;
+                StatManager::Harmonize();
+            }
+            
             ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= currentFollowers.size()) return;
+            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
 
-            auto selectedActorNiPtr = currentFollowers[selectedCompanionIndex].get();
+            auto selectedActorNiPtr = Utils::GetActorPtr(selectedCompanionIndex);
             if (!selectedActorNiPtr) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_ACTOR_INVALID"));
                 return;
@@ -317,13 +435,12 @@ namespace UI {
             auto profile = ProfileParser::GetProfile(selectedActor);
 
             if (profile.skills.empty()) {
-                ImGuiMCP::Text("Aucune competence pour ce profil.");
+                ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_SKILLS_PROFILE"));
                 return;
             }
 
-            // --- 2. AFFICHAGE DES POINTS & COMPETENCES ---
             int remainingPoints = PerkManager::GetRemainingPoints(selectedActor);
-            ImGuiMCP::Text("Points de Perk disponibles : %d", remainingPoints);
+            ImGuiMCP::Text(TranslationService::GetString("UI_PERK_POINTS_AVAILABLE"), remainingPoints);
             ImGuiMCP::Spacing();
 
             static int selectedSkillIndex = 0;
@@ -337,87 +454,22 @@ namespace UI {
             }
 
             ImGuiMCP::Combo("##SkillTree", &selectedSkillIndex, skillNames.data(), static_cast<int>(skillNames.size()));
-
+            
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            // --- 3. RECUPERATION ET TRI DES PERKS ---
             RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
             const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
+            
+            RenderPerkSimpleList(selectedActor, tree);
 
-            if (!tree || tree->nodes.empty()) {
-                ImGuiMCP::Text("Aucun perk trouve pour cette competence.");
-                return;
-            }
-
-            std::vector<Perks::PerkNode*> sortedNodes;
-            for (const auto& node : tree->nodes) {
-                sortedNodes.push_back(node.get());
-            }
-
-            std::sort(sortedNodes.begin(), sortedNodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) {
-                int reqA = a->rankRequirements.empty() ? 0 : a->rankRequirements[0];
-                int reqB = b->rankRequirements.empty() ? 0 : b->rankRequirements[0];
-                return reqA < reqB;
-            });
-
-            // --- 4. AFFICHAGE DES BOUTONS ---
-            for (auto* node : sortedNodes) {
-                if (node->ranks.empty()) continue;
-
-                int currentRank = PerkManager::GetCurrentRank(selectedActor, node);
-                bool isMaxedOut = PerkManager::IsMaxedOut(selectedActor, node);
-                int nextReqLevel = PerkManager::GetNextRequirement(selectedActor, node);
-
-                bool canBuy = PerkManager::CanPurchase(selectedActor, node);
-                bool canRefund = PerkManager::CanRefund(selectedActor, node);
-
-                if (!canBuy && !isMaxedOut) {
-                    ImGuiMCP::BeginDisabled();
-                }
-
-                std::string btnText = node->name + " (" + std::to_string(currentRank) + "/" + std::to_string(node->maxRanks) + ") ";
-                btnText += isMaxedOut ? "[Max]" : "(Niv. " + std::to_string(nextReqLevel) + ")";
-
-                if (ImGuiMCP::Button(btnText.c_str())) {
-                    if (canBuy) {
-                        PerkManager::Purchase(selectedActor, node);
-                    }
-                }
-
-                if (!canBuy && !isMaxedOut) {
-                    ImGuiMCP::EndDisabled();
-                }
-
-                if (canRefund) {
-                    ImGuiMCP::SameLine();
-                    ImGuiMCP::PushID(node->ranks[0]->GetFormID());
-
-                    if (ImGuiMCP::Button(" - ")) {
-                        PerkManager::Refund(selectedActor, node);
-                    }
-
-                    ImGuiMCP::PopID();
-                }
-            }
-
-            // --- 5. STATISTIQUES DE COMBAT ---
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            ImGuiMCP::Text("Statistiques de combat (Equipement actuel) :");
-
-            float currentArmor = CalculateActorArmor(selectedActor);
-            float currentDamage = CalculateActorDamage(selectedActor);
-
-            ImGuiMCP::Text("Armure totale : %.0f", currentArmor);
-
-            if (currentDamage > 0.0f) {
-                ImGuiMCP::Text("Degats (Main droite) : %.1f", currentDamage);
-            } else {
-                ImGuiMCP::Text("Degats (Main droite) : Mains nues / Magie");
+            if (ImGuiMCP::Button(TranslationService::GetString("UI_RESET_PERK_TREE"))) {
+                PerkManager::RefundTree(selectedActor, tree);
             }
         }
     }

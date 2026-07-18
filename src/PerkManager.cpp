@@ -1,10 +1,11 @@
 #include "PerkManager.h"
 
-#include <unordered_map>
-
+#include "Utils.h"
 #include "Rules.h"
 #include "StatManager.h"
 #include "Storage.h"
+
+#include <unordered_map>
 
 namespace {
     std::unordered_map<RE::ActorValue, Perks::PerkTree> perkTrees;
@@ -47,9 +48,13 @@ namespace {
             RE::BSString perkDescription;
             nativeNode->perk->GetDescription(perkDescription, nativeNode->perk);
             
-            logger::info("{} :\n{}\n", customNode->name, perkDescription.c_str());
+            // logger::info("{} :\n{}\n", customNode->name, perkDescription.c_str());
 
+            customNode->description = perkDescription.c_str();
             customNode->associatedSkill = av;
+
+            customNode->horizontalPosition = nativeNode->horizontalPosition;
+            customNode->verticalPosition = nativeNode->verticalPosition;
 
             RE::BGSPerk* currentRankPerk = nativeNode->perk;
             while (currentRankPerk) {
@@ -228,7 +233,15 @@ namespace PerkManager {
         return currentSkillLevel >= requirement;
     }
 
-    bool CanRefund(RE::Actor* actor, const Perks::PerkNode* node) { return GetCurrentRank(actor, node) > 0; }
+    bool CanRefund(RE::Actor* actor, const Perks::PerkNode* node) {
+        if (GetCurrentRank(actor, node) == 0) return false;
+        for (const auto* childNode : node->children) {
+            if (GetCurrentRank(actor, childNode) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     void Purchase(RE::Actor* actor, const Perks::PerkNode* node) {
         if (CanPurchase(actor, node)) {
@@ -248,14 +261,44 @@ namespace PerkManager {
         }
     }
 
-    void RefundTree(RE::Actor* actor, const Perks::PerkNode* node) {
-        for (int rank = 0; rank < node->maxRanks; rank++) {
-            auto* perk = node->ranks[rank];
-            RemovePerkToActor(actor, perk);
-            if (Storage::Perks::HasPurchased(actor, perk)) {
-                actor->RemovePerk(perk);
+    void RefundTree(RE::Actor* actor, const Perks::PerkTree* tree) {
+        if (!actor || !tree) return;
+
+        for (const auto& nodePtr : tree->nodes) {
+            auto* node = nodePtr.get();
+            int currentRank = GetCurrentRank(actor, node);
+            
+            for (int rank = currentRank - 1; rank >= 0; --rank) {
+                auto* perk = node->ranks[rank];
+                RemovePerkToActor(actor, perk);
                 Storage::Perks::RecordRefund(actor, perk);
             }
         }
     }
+
+    void Harmonize(bool harmonizeActive) {
+        
+        for (auto& handle : Utils::GetActiveFollowers()) {
+            if (auto actorPtr = handle.get()) {
+                if (auto actor = actorPtr.get()) {
+                    for (const auto& [av, tree] : perkTrees) {
+                        for (const auto& nodePtr : tree.nodes) {
+                            for (auto* perk : nodePtr->ranks) {
+                                
+                                if (actor->HasPerk(perk) && !Storage::Perks::HasPurchased(actor, perk)) {
+                                    
+                                    if (harmonizeActive) {
+                                        RemovePerkToActor(actor, perk);
+                                    } else {
+                                        Storage::Perks::RecordPurchase(actor, perk);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

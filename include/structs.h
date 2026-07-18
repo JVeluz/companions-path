@@ -18,6 +18,7 @@ namespace Perks {
 
     struct PerkNode {
         std::string name;
+        std::string description;
         RE::ActorValue associatedSkill;
         int maxRanks = 1;
         
@@ -26,6 +27,9 @@ namespace Perks {
 
         std::vector<PerkNode*> parents;
         std::vector<PerkNode*> children;
+
+        float horizontalPosition;
+        float verticalPosition;
     };
     
     struct PerkTree {

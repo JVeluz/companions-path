@@ -20,5 +20,7 @@ namespace PerkManager {
     
     void Purchase(RE::Actor* actor, const Perks::PerkNode* node);
     void Refund(RE::Actor* actor, const Perks::PerkNode* node);
-    void RefundTree(RE::Actor *actor, const Perks::PerkNode* node);
+    void RefundTree(RE::Actor* actor, const Perks::PerkTree* tree);
+
+    void Harmonize(bool harmonizeActive);
 }

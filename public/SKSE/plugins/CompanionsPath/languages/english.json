@@ -30,6 +30,12 @@
   "STAT_UNKNOWN": "Unknown",
   
   "UI_TAB_STATS": "Stats",
+  "UI_TAB_PERKS": "Perks",
+  "UI_TAB_SETTINGS": "Settings",
+  "UI_SETTING_HARMONIZE": "Harmonize Stats",
+  "UI_REFRESH_LANGUAGES": "Refresh Languages",
+  "UI_SETTING_LANGUAGE": "Language",
+  "UI_NO_LANGUAGE_FILES": "No language files found.",
   "UI_NO_FOLLOWER": "No active follower.",
   "UI_UNKNOWN_UNLOADED": "Unknown (Unloaded)",
   "UI_REFRESH_FOLLOWERS": "Refresh Followers",
@@ -39,7 +45,13 @@
   "UI_LEVEL": "Level : %d",
   "UI_ATTRIBUTES": "Attributes (%d / %d)",
   "UI_SKILLS": "Skills (%d / %d)",
+  "UI_SKILL_LEVEL": "Skill level : %.0f",
+  "UI_PERK_LEVEL": "Level %d",
+  "UI_NO_SKILLS_PROFILE": "No skills for this profile.",
+  "UI_PERK_POINTS_AVAILABLE": "Available Perk Points : %d",
+  "UI_NO_PERKS_FOUND": "No perks found for this skill.",
   
   "UI_RESET_ATTRIBUTES": "Reset Attributes",
-  "UI_RESET_SKILLS": "Reset All Skills"
+  "UI_RESET_SKILLS": "Reset All Skills",
+  "UI_RESET_PERK_TREE": "Reset Tree"
 }

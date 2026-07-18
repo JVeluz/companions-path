@@ -30,6 +30,12 @@
     "STAT_UNKNOWN": "Inconnu",
     
     "UI_TAB_STATS": "Statistiques",
+    "UI_TAB_PERKS": "Atouts",
+    "UI_TAB_SETTINGS": "Paramètres",
+    "UI_SETTING_HARMONIZE": "Harmoniser les statistiques",
+    "UI_REFRESH_LANGUAGES": "Actualiser les langues",
+    "UI_SETTING_LANGUAGE": "Langue",
+    "UI_NO_LANGUAGE_FILES": "Aucun fichier de langue trouvé.",
     "UI_NO_FOLLOWER": "Aucun compagnon actif.",
     "UI_UNKNOWN_UNLOADED": "Inconnu (Non chargé)",
     "UI_REFRESH_FOLLOWERS": "Actualiser les compagnons",
@@ -39,7 +45,13 @@
     "UI_LEVEL": "Niveau : %d",
     "UI_ATTRIBUTES": "Attributs (%d / %d)",
     "UI_SKILLS": "Compétences (%d / %d)",
+    "UI_SKILL_LEVEL": "Niveau de la compétence : %.0f",
+    "UI_PERK_LEVEL": "Niveau %d",
+    "UI_NO_SKILLS_PROFILE": "Aucune compétence pour ce profil.",
+    "UI_PERK_POINTS_AVAILABLE": "Points d'atouts disponibles : %d",
+    "UI_NO_PERKS_FOUND": "Aucun atout trouvé pour cette compétence.",
     
     "UI_RESET_ATTRIBUTES": "Réinitialiser les attributs",
-    "UI_RESET_SKILLS": "Réinitialiser toutes les compétences"
+    "UI_RESET_SKILLS": "Réinitialiser toutes les compétences",
+    "UI_RESET_PERK_TREE": "Réinitialiser l'arbre"
 }
