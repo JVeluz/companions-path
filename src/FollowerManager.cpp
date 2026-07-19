@@ -1,4 +1,5 @@
 #include "FollowerManager.h"
+#include "ConfigManager.h"
 
 namespace {
     std::vector<RE::ActorHandle> activeFollowers;
@@ -48,4 +49,23 @@ namespace FollowerManager {
     std::vector<RE::ActorHandle> GetActiveFollowers() {
         return activeFollowers;
     }
+
+    void SyncFollowerLevels() {
+        if (!ConfigManager::GetSyncLevel()) return;
+
+        auto player = RE::PlayerCharacter::GetSingleton();
+        if (!player) return;
+
+        for (auto& handle : activeFollowers) {
+            if (auto actorPtr = handle.get()) {
+                if (auto actor = actorPtr.get()) {
+                    if (auto base = actor->GetActorBase()) {
+                        base->actorData.actorBaseFlags.set(RE::ACTOR_BASE_DATA::Flag::kPCLevelMult);
+                        base->actorData.calcLevelMax = 0; 
+                    }
+                }
+            }
+        }
+    }
+
 }

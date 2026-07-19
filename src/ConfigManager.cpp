@@ -1,15 +1,17 @@
 #include "ConfigManager.h"
-#include "logger.h"
-#include "json.hpp"
-#include "profile.h"
-#include "language.h"
 
 #include <fstream>
+
+#include "json.hpp"
+#include "language.h"
+#include "logger.h"
+#include "profile.h"
 
 using json = nlohmann::json;
 
 namespace {
-    bool harmonize = true; 
+    bool harmonize = true;
+    bool syncLevel = false;
     std::string currentLanguage = "english";
     std::string currentConfigPath = "";
 }
@@ -49,6 +51,15 @@ namespace ConfigManager {
             }
         }
 
+        if (config.contains("SyncLevel")) {
+            if (config["SyncLevel"].is_boolean()) {
+                syncLevel = config["SyncLevel"].get<bool>();
+                logger::info("SyncLevel option set to: {}", syncLevel ? "true" : "false");
+            } else {
+                logger::error("SyncLevel option must be a boolean.");
+            }
+        }
+
         ProfileRepository::InitializeFromJson(config);
     }
 
@@ -59,7 +70,7 @@ namespace ConfigManager {
         }
 
         json config;
-        
+
         std::ifstream inFile(currentConfigPath);
         if (inFile.is_open()) {
             try {
@@ -73,6 +84,7 @@ namespace ConfigManager {
         }
 
         config["Harmonize"] = harmonize;
+        config["SyncLevel"] = syncLevel;
         config["Language"] = currentLanguage;
 
         std::ofstream outFile(currentConfigPath);
@@ -85,10 +97,8 @@ namespace ConfigManager {
         }
     }
 
-    bool GetHarmonize() {
-        return harmonize;
-    }
-    
+    bool GetHarmonize() { return harmonize; }
+
     void SetHarmonize(bool value) {
         if (harmonize != value) {
             harmonize = value;
@@ -97,9 +107,7 @@ namespace ConfigManager {
         }
     }
 
-    std::string GetLanguage() {
-        return currentLanguage;
-    }
+    std::string GetLanguage() { return currentLanguage; }
 
     void SetLanguage(const std::string& lang) {
         if (currentLanguage != lang) {
@@ -107,6 +115,18 @@ namespace ConfigManager {
             LanguageRepository::LoadLanguage(currentLanguage);
             SaveConfig();
             logger::info("Language changed via UI to: {}", currentLanguage);
+        }
+    }
+
+    bool GetSyncLevel() {
+        return syncLevel;
+    }
+    
+    void SetSyncLevel(bool value) {
+        if (syncLevel != value) {
+            syncLevel = value;
+            SaveConfig();
+            logger::info("SyncLevel changed to {}", syncLevel);
         }
     }
 }

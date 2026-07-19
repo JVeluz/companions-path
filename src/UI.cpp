@@ -1,15 +1,15 @@
 ﻿#include "UI.h"
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <map>
+#include <string>
+#include <vector>
 
 #include "ConfigManager.h"
+#include "FollowerManager.h"
 #include "PerkManager.h"
 #include "Rules.h"
 #include "StatManager.h"
-#include "FollowerManager.h"
 #include "language.h"
 #include "profile.h"
 #include "structs.h"
@@ -125,9 +125,9 @@ namespace UI {
 
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
-            
+
             auto followers = FollowerManager::GetActiveFollowers();
-            
+
             if (followers.empty()) {
                 ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_FOLLOWER"));
             } else {
@@ -231,7 +231,6 @@ namespace UI {
 
     namespace Settings {
         void __stdcall Render() {
-            
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_RELOAD_CONFIG"))) {
                 ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
@@ -245,43 +244,52 @@ namespace UI {
                 PerkManager::Harmonize(harmonize);
             }
 
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
-            ImGuiMCP::Spacing();
-
-            static int currentLangIndex = -1;
-
-            if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_LANGUAGES"))) {
-                LanguageRepository::ScanAvailableLanguages();
-                currentLangIndex = -1; 
+            bool syncLevel = ConfigManager::GetSyncLevel();
+            if (ImGuiMCP::Checkbox(TranslationService::GetString("UI_SETTING_SYNC_LEVEL"), &syncLevel)) {
+                ConfigManager::SetSyncLevel(syncLevel);
+                if (syncLevel) {
+                    FollowerManager::SyncFollowerLevels();
+                    StatManager::Harmonize();
+                }
             }
 
-            ImGuiMCP::Spacing();
+            // ImGuiMCP::Spacing();
+            // ImGuiMCP::Separator();
+            // ImGuiMCP::Spacing();
 
-            const auto& availableLanguages = LanguageRepository::GetAvailableLanguages();
-            
-            if (!availableLanguages.empty()) {
-                if (currentLangIndex == -1) {
-                    std::string currentLang = ConfigManager::GetLanguage();
-                    auto it = std::find(availableLanguages.begin(), availableLanguages.end(), currentLang);
-                    if (it != availableLanguages.end()) {
-                        currentLangIndex = static_cast<int>(std::distance(availableLanguages.begin(), it));
-                    } else {
-                        currentLangIndex = 0;
-                    }
-                }
+            // static int currentLangIndex = -1;
 
-                std::vector<const char*> langItems;
-                for (const auto& lang : availableLanguages) {
-                    langItems.push_back(lang.c_str());
-                }
+            // if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_LANGUAGES"))) {
+            //     LanguageRepository::ScanAvailableLanguages();
+            //     currentLangIndex = -1;
+            // }
 
-                if (ImGuiMCP::Combo(TranslationService::GetString("UI_SETTING_LANGUAGE"), &currentLangIndex, langItems.data(), static_cast<int>(langItems.size()))) {
-                    ConfigManager::SetLanguage(availableLanguages[currentLangIndex]);
-                }
-            } else {
-                ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_LANGUAGE_FILES"));
-            }
+            // ImGuiMCP::Spacing();
+
+            // const auto& availableLanguages = LanguageRepository::GetAvailableLanguages();
+
+            // if (!availableLanguages.empty()) {
+            //     if (currentLangIndex == -1) {
+            //         std::string currentLang = ConfigManager::GetLanguage();
+            //         auto it = std::find(availableLanguages.begin(), availableLanguages.end(), currentLang);
+            //         if (it != availableLanguages.end()) {
+            //             currentLangIndex = static_cast<int>(std::distance(availableLanguages.begin(), it));
+            //         } else {
+            //             currentLangIndex = 0;
+            //         }
+            //     }
+
+            //     std::vector<const char*> langItems;
+            //     for (const auto& lang : availableLanguages) {
+            //         langItems.push_back(lang.c_str());
+            //     }
+
+            //     if (ImGuiMCP::Combo(TranslationService::GetString("UI_SETTING_LANGUAGE"), &currentLangIndex, langItems.data(), static_cast<int>(langItems.size()))) {
+            //         ConfigManager::SetLanguage(availableLanguages[currentLangIndex]);
+            //     }
+            // } else {
+            //     ImGuiMCP::Text("%s", TranslationService::GetString("UI_NO_LANGUAGE_FILES"));
+            // }
         }
     }
 
@@ -290,7 +298,7 @@ namespace UI {
         void RenderPerkTooltip(const Perks::PerkNode* node, int currentRank) {
             if (ImGuiMCP::IsItemHovered()) {
                 ImGuiMCP::BeginTooltip();
-                
+
                 int displayRank = currentRank;
                 if (displayRank >= node->ranks.size()) {
                     displayRank = static_cast<int>(node->ranks.size()) - 1;
@@ -326,16 +334,13 @@ namespace UI {
             for (const auto& nodePtr : tree->nodes) {
                 auto* node = nodePtr.get();
                 if (node->ranks.empty()) continue;
-                
+
                 int reqLevel = node->rankRequirements.empty() ? 0 : node->rankRequirements[0];
                 nodesByLevel[reqLevel].push_back(node);
             }
 
             for (auto& [reqLevel, nodes] : nodesByLevel) {
-                
-                std::sort(nodes.begin(), nodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) {
-                    return a->horizontalPosition < b->horizontalPosition;
-                });
+                std::sort(nodes.begin(), nodes.end(), [](const Perks::PerkNode* a, const Perks::PerkNode* b) { return a->horizontalPosition < b->horizontalPosition; });
 
                 ImGuiMCP::Text(TranslationService::GetString("UI_PERK_LEVEL"), reqLevel);
                 ImGuiMCP::Separator();
@@ -388,7 +393,7 @@ namespace UI {
 
         void __stdcall Render() {
             ImGuiMCP::SetNextItemWidth(200.0f);
-            
+
             auto followers = FollowerManager::GetActiveFollowers();
 
             if (followers.empty()) {
@@ -411,16 +416,16 @@ namespace UI {
                     names.push_back(unloadedStr.c_str());
                 }
             }
-            
+
             ImGuiMCP::Combo("##TargetPerks", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
-            
+
             ImGuiMCP::SameLine();
             if (ImGuiMCP::Button(TranslationService::GetString("UI_REFRESH_FOLLOWERS"))) {
                 FollowerManager::RefreshFollowers();
                 StatManager::Harmonize();
                 selectedCompanionIndex = 0;
             }
-            
+
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
@@ -435,10 +440,10 @@ namespace UI {
 
             auto selectedActor = selectedActorNiPtr.get();
 
-            if (!FollowerManager::IsUniqueNPC(selectedActor)) {
-                ImGuiMCP::Text(TranslationService::GetString("UI_ERROR_GENERIC_NPC"));
-                return;
-            }
+            // if (!FollowerManager::IsUniqueNPC(selectedActor)) {
+            //     ImGuiMCP::Text(TranslationService::GetString("UI_ERROR_GENERIC_NPC"));
+            //     return;
+            // }
 
             auto profile = ProfileParser::GetProfile(selectedActor);
 
@@ -462,14 +467,14 @@ namespace UI {
             }
 
             ImGuiMCP::Combo("##SkillTree", &selectedSkillIndex, skillNames.data(), static_cast<int>(skillNames.size()));
-            
+
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
             RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
             const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
-            
+
             RenderPerkSimpleList(selectedActor, tree);
 
             ImGuiMCP::Spacing();

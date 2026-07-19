@@ -1,6 +1,7 @@
 {
   "Language": "english",
   "Harmonize": true,
+  "SyncLevel": false,
   "Tags": {
     "Creature": {
       "Attributes": [

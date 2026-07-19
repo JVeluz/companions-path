@@ -11,4 +11,7 @@ namespace ConfigManager {
     
     bool GetHarmonize();
     void SetHarmonize(bool value);
+
+    bool GetSyncLevel();
+    void SetSyncLevel(bool value);
 }

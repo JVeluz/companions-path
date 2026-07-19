@@ -1,11 +1,11 @@
 #include "ConfigManager.h"
 #include "EventManager.h"
+#include "FollowerManager.h"
 #include "Logger.h"
 #include "PerkManager.h"
 #include "StatManager.h"
 #include "Storage.h"
 #include "UI.h"
-#include "FollowerManager.h"
 #include "language.h"
 #include "profile.h"
 
@@ -25,6 +25,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
         case SKSE::MessagingInterface::kPostLoadGame:
         case SKSE::MessagingInterface::kNewGame: {
             FollowerManager::RefreshFollowers();
+            FollowerManager::SyncFollowerLevels();
             StatManager::Harmonize();
             PerkManager::Harmonize(ConfigManager::GetHarmonize());
             break;
