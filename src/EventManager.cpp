@@ -1,9 +1,10 @@
 #include "EventManager.h"
-#include "StatManager.h"
+
 #include "SKSEMenuFramework.h"
+#include "StatManager.h"
 
 namespace {
-    
+
     class MenuOpenCloseEventSink : public RE::BSTEventSink<RE::MenuOpenCloseEvent> {
     public:
         static MenuOpenCloseEventSink* GetSingleton() {

@@ -1,11 +1,12 @@
 #include "PerkManager.h"
 
+#include <unordered_map>
+
+#include "ActorEngine.h"
 #include "FollowerManager.h"
 #include "Rules.h"
 #include "StatManager.h"
 #include "Storage.h"
-
-#include <unordered_map>
 
 namespace {
     std::unordered_map<RE::ActorValue, Perks::PerkTree> perkTrees;
@@ -47,7 +48,7 @@ namespace {
 
             RE::BSString perkDescription;
             nativeNode->perk->GetDescription(perkDescription, nativeNode->perk);
-            
+
             // logger::info("{} :\n{}\n", customNode->name, perkDescription.c_str());
 
             customNode->description = perkDescription.c_str();
@@ -66,12 +67,12 @@ namespace {
 
             currentCustom = customNode.get();
 
-            // logger::info("[Profondeur {}] Perk trouve : '{}' (maxRanks: {}, ID Rang 1: {:08X})", depth, currentCustom->Name, currentCustom->maxRanks, currentCustom->ranks[0]->GetFormID());
+            // logger::info("[Profondeur {}] Perk trouve : '{}' (maxRanks: {}, ID Rang 1: {:08X})", depth, currentCustom->name, currentCustom->maxRanks, currentCustom->ranks[0]->GetFormID());
 
             if (parentNode) {
                 currentCustom->parents.push_back(parentNode);
                 parentNode->children.push_back(currentCustom);
-                // logger::info("[Profondeur {}] -> Parent assigne : '{}'", depth, parentNode->Name);
+                // logger::info("[Profondeur {}] -> Parent assigne : '{}'", depth, parentNode->name);
             }
 
             for (auto* rankPerk : currentCustom->ranks) {
@@ -95,43 +96,6 @@ namespace {
         }
     }
 
-    // TrumanGIT : Follower-Leveling-System-Redone/src/serialization.cpp
-    void AddPerkToActor(RE::Actor* actor, RE::BGSPerk* perk) {
-        if (!actor || !perk) return;
-
-        if (actor->HasPerk(perk)) {
-            logger::info("L'acteur possède déjà ce perk.");
-            return; 
-        }
-
-        if (auto base = actor->GetActorBase(); base) {
-            if (base->AddPerk(perk, 1)) {
-                for (const auto& perkEntry : perk->perkEntries) {
-                    if (perkEntry) {
-                        logger::info("Applying perk entry");
-                        perkEntry->ApplyPerkEntry(actor);
-                        logger::info("Applied perk entry");
-                    }
-                }
-            }
-        }
-    }
-
-    void RemovePerkToActor(RE::Actor* actor, RE::BGSPerk* perk) {
-        if (!actor || !perk) return;
-
-        if (auto base = actor->GetActorBase(); base) {
-            for (const auto& perkEntry : perk->perkEntries) {
-                if (perkEntry) {
-                    logger::info("Removing perk entry");
-                    perkEntry->RemovePerkEntry(actor);
-                    logger::info("Removed perk entry");
-                }
-            }
-            
-            base->RemovePerk(perk);
-        }
-    }
 }
 
 namespace PerkManager {
@@ -247,7 +211,7 @@ namespace PerkManager {
         if (CanPurchase(actor, node)) {
             int rank = GetCurrentRank(actor, node);
             auto* perk = node->ranks[rank];
-            AddPerkToActor(actor, perk);
+            ActorEngine::AddPerk(actor, perk);
             Storage::Perks::RecordPurchase(actor, perk);
         }
     }
@@ -256,7 +220,7 @@ namespace PerkManager {
         if (CanRefund(actor, node)) {
             int rank = GetCurrentRank(actor, node);
             auto* perk = node->ranks[rank - 1];
-            RemovePerkToActor(actor, perk);
+            ActorEngine::RemovePerk(actor, perk);
             Storage::Perks::RecordRefund(actor, perk);
         }
     }
@@ -267,32 +231,26 @@ namespace PerkManager {
         for (const auto& nodePtr : tree->nodes) {
             auto* node = nodePtr.get();
             int currentRank = GetCurrentRank(actor, node);
-            
+
             for (int rank = currentRank - 1; rank >= 0; --rank) {
                 auto* perk = node->ranks[rank];
-                RemovePerkToActor(actor, perk);
+                ActorEngine::RemovePerk(actor, perk);
                 Storage::Perks::RecordRefund(actor, perk);
             }
         }
     }
 
     void Harmonize(bool harmonizeActive) {
-        
-        for (auto& handle : FollowerManager::GetActiveFollowers()) {
-            if (auto actorPtr = handle.get()) {
-                if (auto actor = actorPtr.get()) {
-                    for (const auto& [av, tree] : perkTrees) {
-                        for (const auto& nodePtr : tree.nodes) {
-                            for (auto* perk : nodePtr->ranks) {
-                                
-                                if (actor->HasPerk(perk) && !Storage::Perks::HasPurchased(actor, perk)) {
-                                    
-                                    if (harmonizeActive) {
-                                        RemovePerkToActor(actor, perk);
-                                    } else {
-                                        Storage::Perks::RecordPurchase(actor, perk);
-                                    }
-                                }
+        for (auto actorPtr : FollowerManager::GetActorPtrs()) {
+            auto actor = actorPtr.get();
+            for (const auto& [av, tree] : perkTrees) {
+                for (const auto& nodePtr : tree.nodes) {
+                    for (auto* perk : nodePtr->ranks) {
+                        if (actor->HasPerk(perk) && !Storage::Perks::HasPurchased(actor, perk)) {
+                            if (harmonizeActive) {
+                                ActorEngine::RemovePerk(actor, perk);
+                            } else {
+                                Storage::Perks::RecordPurchase(actor, perk);
                             }
                         }
                     }

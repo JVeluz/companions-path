@@ -46,7 +46,7 @@ namespace Rules {
                 return it->second;
             }
     
-            if (!ConfigManager::GetHarmonize()) {
+            if (!ConfigManager::GetConfig().harmonize){
                 if (auto baseNPC = actor->GetActorBase()) {
                     return baseNPC->GetActorValue(actorValue); 
                 }
@@ -60,7 +60,7 @@ namespace Rules {
             float step = GetStepValue(actor, actorValue);
             return baseValue + (points * step);
         }
-    
+
         int GetAttributePoints(RE::Actor* actor) { 
             return std::max(0, actor->GetLevel() - 1); 
         }

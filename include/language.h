@@ -4,12 +4,9 @@
 #include <string>
 #include <string_view>
 
-namespace TranslationService {
+namespace Language {
     const char* GetString(std::string_view key);
-}
-
-namespace LanguageRepository {
-    void ScanAvailableLanguages();
-    const std::vector<std::string>& GetAvailableLanguages();
-    bool LoadLanguage(const std::string& languageName);
+    const std::vector<std::string>& GetLanguages();
+    void Scan();
+    bool Load(const std::string& path);
 }

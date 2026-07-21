@@ -6,28 +6,50 @@
 #include "StatManager.h"
 #include "Storage.h"
 #include "UI.h"
-#include "language.h"
+#include "Language.h"
 #include "profile.h"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     switch (message->type) {
         case SKSE::MessagingInterface::kDataLoaded: {
+       
             auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("sLanguage:General");
             std::string gameLanguage = setting ? setting->GetString() : "english";
-            LanguageRepository::LoadLanguage(gameLanguage);
-            EventManager::Register();
-            Storage::Register();
+            
+            Language::Load(std::format("Data/SKSE/Plugins/CompanionsPath/languages/{}.json", gameLanguage));
+
+            Language::Scan();
+            
+            ConfigManager::RegisterChangedCallback([](const Config& newConfig) {
+                logger::info("Config has changed !");
+                
+                ProfileParser::ClearCache();
+                
+                if (ConfigManager::GetConfig().currentLanguage != newConfig.currentLanguage) {
+                    Language::Load(std::format("Data/SKSE/Plugins/CompanionsPath/languages/{}.json", newConfig.currentLanguage));
+                }
+                if (newConfig.syncLevel) {
+                    FollowerManager::SyncLevels();
+                }
+                if (newConfig.harmonize) {
+                    StatManager::Harmonize();
+                }
+                PerkManager::Harmonize(newConfig.harmonize);
+            });
+            
+            ConfigManager::Load("Data/SKSE/Plugins/CompanionsPath/config.json");
+            ProfileRepository::Load("Data/SKSE/Plugins/CompanionsPath/profiles/default.json");
+
             PerkManager::Initialize();
-            ConfigManager::LoadConfig("Data/SKSE/Plugins/CompanionsPath/config.json");
+            
+            Storage::Register();
+            EventManager::Register();
             UI::Register();
             break;
         }
         case SKSE::MessagingInterface::kPostLoadGame:
         case SKSE::MessagingInterface::kNewGame: {
-            FollowerManager::RefreshFollowers();
-            FollowerManager::SyncFollowerLevels();
-            StatManager::Harmonize();
-            PerkManager::Harmonize(ConfigManager::GetHarmonize());
+            FollowerManager::Refresh();
             break;
         }
     }

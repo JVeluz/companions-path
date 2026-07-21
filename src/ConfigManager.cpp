@@ -2,79 +2,113 @@
 
 #include <fstream>
 
+#include "Language.h"
 #include "json.hpp"
-#include "language.h"
 #include "logger.h"
 #include "profile.h"
 
 using json = nlohmann::json;
 
 namespace {
-    bool harmonize = true;
-    bool syncLevel = false;
-    std::string currentLanguage = "english";
-    std::string currentConfigPath = "";
+    Config config;
+    std::string currentPath = "";
+    std::vector<ChangedCallback> changedCallbacks;
+
+    void NotifyChanged() {
+        for (const auto& callback : changedCallbacks) {
+            callback(config);
+        }
+    }
 }
 
 namespace ConfigManager {
-    void LoadConfig(const std::string& configPath) {
-        LanguageRepository::ScanAvailableLanguages();
 
-        currentConfigPath = configPath;
+    const Config& GetConfig() { return config; }
 
-        std::ifstream file(configPath);
+    void RegisterChangedCallback(ChangedCallback callback) {
+        changedCallbacks.push_back(callback);
+    }
+
+    void SetHarmonize(bool value) {
+        if (config.harmonize != value) {
+            config.harmonize = value;
+            NotifyChanged();
+            Save();
+        }
+    }
+    
+    void SetLanguage(const std::string& lang) {
+        if (config.currentLanguage != lang) {
+            config.currentLanguage = lang;
+            Language::Load(config.currentLanguage);
+            NotifyChanged();
+            Save();
+        }
+    }
+
+    void SetSyncLevel(bool value) {
+        if (config.syncLevel != value) {
+            config.syncLevel = value;
+            NotifyChanged();
+            Save();
+        }
+    }
+
+    void Refresh() {
+        NotifyChanged();
+    }
+
+    void Load(const std::string& path) {
+        currentPath = path;
+
+        std::ifstream file(path);
         if (!file.is_open()) {
-            logger::error("Could not open config file: {}", configPath);
+            logger::error("Could not open config file: {}", path);
             return;
         }
 
-        json config;
+        json configFile;
         try {
-            file >> config;
+            file >> configFile;
         } catch (const json::parse_error& e) {
             logger::error("JSON parsing error in config file: {}", e.what());
             return;
         }
 
-        if (config.contains("Language")) {
-            currentLanguage = config["Language"].get<std::string>();
-            logger::info("Language override found in config: {}", currentLanguage);
-            LanguageRepository::LoadLanguage(currentLanguage);
+        if (configFile.contains("Language")) {
+            config.currentLanguage = configFile["Language"].get<std::string>();
         }
 
-        if (config.contains("Harmonize")) {
-            if (config["Harmonize"].is_boolean()) {
-                harmonize = config["Harmonize"].get<bool>();
-                logger::info("Harmonize option set to: {}", harmonize ? "true" : "false");
+        if (configFile.contains("Harmonize")) {
+            if (configFile["Harmonize"].is_boolean()) {
+                config.harmonize = configFile["Harmonize"].get<bool>();
             } else {
                 logger::error("Harmonize option must be a boolean (true or false).");
             }
         }
 
-        if (config.contains("SyncLevel")) {
-            if (config["SyncLevel"].is_boolean()) {
-                syncLevel = config["SyncLevel"].get<bool>();
-                logger::info("SyncLevel option set to: {}", syncLevel ? "true" : "false");
+        if (configFile.contains("SyncLevel")) {
+            if (configFile["SyncLevel"].is_boolean()) {
+                config.syncLevel = configFile["SyncLevel"].get<bool>();
             } else {
                 logger::error("SyncLevel option must be a boolean.");
             }
         }
 
-        ProfileRepository::InitializeFromJson(config);
+        NotifyChanged();
     }
 
-    void SaveConfig() {
-        if (currentConfigPath.empty()) {
-            logger::error("Cannot save config: Path is empty.");
+    void Save() {
+        if (currentPath.empty()) {
             return;
         }
 
-        json config;
+        json configFile;
 
-        std::ifstream inFile(currentConfigPath);
+        std::ifstream inFile(currentPath);
         if (inFile.is_open()) {
             try {
-                inFile >> config;
+                inFile >> configFile;
             } catch (const json::parse_error& e) {
                 logger::error("Failed to parse existing config before saving. Aborting save to prevent data loss. Error: {}", e.what());
                 inFile.close();
@@ -83,50 +117,16 @@ namespace ConfigManager {
             inFile.close();
         }
 
-        config["Harmonize"] = harmonize;
-        config["SyncLevel"] = syncLevel;
-        config["Language"] = currentLanguage;
+        configFile["Harmonize"] = config.harmonize;
+        configFile["SyncLevel"] = config.syncLevel;
+        configFile["Language"] = config.currentLanguage;
 
-        std::ofstream outFile(currentConfigPath);
+        std::ofstream outFile(currentPath);
         if (outFile.is_open()) {
-            outFile << config.dump(4);
+            outFile << configFile.dump(4);
             outFile.close();
-            logger::info("Configuration saved successfully.");
         } else {
-            logger::error("Could not open config file for writing: {}", currentConfigPath);
-        }
-    }
-
-    bool GetHarmonize() { return harmonize; }
-
-    void SetHarmonize(bool value) {
-        if (harmonize != value) {
-            harmonize = value;
-            SaveConfig();
-            logger::info("Harmonize changed to {}", harmonize);
-        }
-    }
-
-    std::string GetLanguage() { return currentLanguage; }
-
-    void SetLanguage(const std::string& lang) {
-        if (currentLanguage != lang) {
-            currentLanguage = lang;
-            LanguageRepository::LoadLanguage(currentLanguage);
-            SaveConfig();
-            logger::info("Language changed via UI to: {}", currentLanguage);
-        }
-    }
-
-    bool GetSyncLevel() {
-        return syncLevel;
-    }
-    
-    void SetSyncLevel(bool value) {
-        if (syncLevel != value) {
-            syncLevel = value;
-            SaveConfig();
-            logger::info("SyncLevel changed to {}", syncLevel);
+            logger::error("Could not open config file for writing: {}", currentPath);
         }
     }
 }

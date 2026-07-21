@@ -4,14 +4,14 @@
 
 #include <string>
 #include <unordered_map>
-#include <json.hpp>
 
 namespace ProfileParser {
+    void ClearCache();
     Profile GetProfile(RE::Actor* actor);
 }
 
 namespace ProfileRepository {
-    void InitializeFromJson(const nlohmann::json& config);
+    void Load(const std::string& path);
     const std::unordered_map<std::string, Profile>& GetTagProfiles();
     const std::unordered_map<std::string, Profile>& GetRaceProfiles();
     const std::unordered_map<std::string, Profile>& GetActorProfiles();

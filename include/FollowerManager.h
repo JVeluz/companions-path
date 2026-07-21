@@ -3,10 +3,8 @@
 #include <vector>
 
 namespace FollowerManager {
-    bool IsUniqueNPC(RE::Actor* actor);
-    void RefreshFollowers();
-    RE::ActorPtr GetActorPtr(int index);
+    std::vector<RE::ActorPtr> GetActorPtrs();
     RE::Actor* GetActor(int index);
-    std::vector<RE::ActorHandle> GetActiveFollowers();
-    void SyncFollowerLevels();
+    void Refresh();
+    void SyncLevels();
 };

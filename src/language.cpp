@@ -1,41 +1,38 @@
-#include "language.h"
-#include "logger.h"
+#include "Language.h"
 
+#include <filesystem>
+#include <fstream>
+#include <json.hpp>
 #include <string>
 #include <string_view>
-
-namespace {
-    std::unordered_map<std::string, std::string> dictionary;
-}
-
-namespace TranslationService {
-    const char* GetString(std::string_view key) {
-        std::string strKey(key);
-        auto it = dictionary.find(strKey);
-        if (it != dictionary.end()) {
-            return it->second.c_str(); 
-        }
-        dictionary[strKey] = strKey;
-        return dictionary[strKey].c_str();
-    }
-}
-
 #include <unordered_map>
-#include <fstream>
-#include <filesystem>
-#include <json.hpp>
+
+#include "logger.h"
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 namespace {
+    std::unordered_map<std::string, std::string> dictionary;
     std::vector<std::string> availableLanguages;
     const std::string languageDirectory = "Data/SKSE/Plugins/CompanionsPath/languages/";
 }
 
-namespace LanguageRepository {
+namespace Language {
 
-    void ScanAvailableLanguages() {
+    const char* GetString(std::string_view key) {
+        std::string strKey(key);
+        auto it = dictionary.find(strKey);
+        if (it != dictionary.end()) {
+            return it->second.c_str();
+        }
+        dictionary[strKey] = strKey;
+        return dictionary[strKey].c_str();
+    }
+
+    const std::vector<std::string>& GetLanguages() { return availableLanguages; }
+
+    void Scan() {
         availableLanguages.clear();
         try {
             if (fs::exists(languageDirectory) && fs::is_directory(languageDirectory)) {
@@ -53,23 +50,17 @@ namespace LanguageRepository {
         }
     }
 
-    const std::vector<std::string>& GetAvailableLanguages() {
-        return availableLanguages;
-    }
-
-    bool LoadLanguage(const std::string& languageName) {
-        std::string filePath = languageDirectory + languageName + ".json";
-        
-        std::ifstream file(filePath);
+    bool Load(const std::string& path) {
+        std::ifstream file(path);
         if (!file.is_open()) {
-            logger::error("No language file found in : {}", filePath);
+            logger::error("No language file found in : {}", path);
             return false;
         }
 
         try {
             json j;
             file >> j;
-            
+
             dictionary.clear();
 
             for (auto& [key, value] : j.items()) {
@@ -77,12 +68,9 @@ namespace LanguageRepository {
                     dictionary[key] = value.get<std::string>();
                 }
             }
-            
-            logger::info("Language loaded : {}", languageName);
             return true;
-            
-        } catch (const json::parse_error& e) {
-            logger::error("Parsing error in : {}.json : {}", languageName, e.what());
+
+        } catch (const json::parse_error& _) {
             return false;
         }
     }

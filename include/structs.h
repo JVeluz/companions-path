@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
+#include <vector>
 
 struct Profile {
     std::vector<RE::ActorValue> attributes;
@@ -21,7 +21,7 @@ namespace Perks {
         std::string description;
         RE::ActorValue associatedSkill;
         int maxRanks = 1;
-        
+
         std::vector<RE::BGSPerk*> ranks;
         std::vector<int> rankRequirements;
 
@@ -31,10 +31,11 @@ namespace Perks {
         float horizontalPosition;
         float verticalPosition;
     };
-    
+
     struct PerkTree {
         RE::ActorValue skill = RE::ActorValue::kNone;
         std::vector<std::unique_ptr<PerkNode>> nodes;
         std::vector<PerkNode*> rootNodes;
     };
+
 }

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <format>
+#include <json.hpp>
 
 namespace {
     std::string ToLowercase(std::string_view str) {
@@ -52,7 +53,7 @@ namespace ProfileRepository {
 
         Profile ParseProfile(const nlohmann::json& jProfile) {
             Profile profile;
-            
+
             if (jProfile.contains("Attributes")) {
                 for (const auto& attr : jProfile["Attributes"]) {
                     auto av = StringToActorValue(attr);
@@ -92,7 +93,16 @@ namespace ProfileRepository {
 
     }
 
-    void InitializeFromJson(const nlohmann::json& config) {
+    void Load(const std::string& path) {
+        std::ifstream file(path);
+        if (!file.is_open()) {
+            logger::error("No profiles files found at : {}", path);
+            return;
+        }
+
+        nlohmann::json profilesFile;
+        file >> profilesFile;
+
         tagProfiles.clear();
         raceProfiles.clear();
         actorProfiles.clear();
@@ -104,9 +114,9 @@ namespace ProfileRepository {
         defaultHumanoidProfile.all = defaultHumanoidProfile.attributes;
         defaultHumanoidProfile.all.insert(defaultHumanoidProfile.all.end(), defaultHumanoidProfile.skills.begin(), defaultHumanoidProfile.skills.end());
 
-        LoadProfileCategory(config, "Tags", tagProfiles);
-        LoadProfileCategory(config, "Races", raceProfiles);
-        LoadProfileCategory(config, "Actors", actorProfiles);
+        LoadProfileCategory(profilesFile, "Tags", tagProfiles);
+        LoadProfileCategory(profilesFile, "Races", raceProfiles);
+        LoadProfileCategory(profilesFile, "Actors", actorProfiles);
     }
 
     const std::unordered_map<std::string, Profile>& GetTagProfiles() { return tagProfiles; }
@@ -118,6 +128,8 @@ namespace ProfileRepository {
 namespace ProfileParser {
 
     namespace {
+        std::unordered_map<RE::FormID, Profile> profileCache;
+
         void MergeProfile(Profile& target, const Profile& source) {
             if (source.overrideAttributes) {
                 target.attributes = source.attributes;
@@ -135,14 +147,23 @@ namespace ProfileParser {
         }
     }
 
+    void ClearCache() {
+        profileCache.clear();
+    }
+
     Profile GetProfile(RE::Actor* actor) {
         if (!actor) return ProfileRepository::GetDefaultProfile();
 
-        Profile finalProfile = ProfileRepository::GetDefaultProfile();
+        auto it = profileCache.find(actor->GetFormID());
+        if (it != profileCache.end()) {
+            return it->second;
+        }
+
+        Profile profile = ProfileRepository::GetDefaultProfile();
 
         for (const auto& [tagKey, tagProfile] : ProfileRepository::GetTagProfiles()) {
             if (actor->HasKeywordString(tagKey) || actor->HasKeywordString("actortype" + tagKey)) {
-                MergeProfile(finalProfile, tagProfile);
+                MergeProfile(profile, tagProfile);
                 break;
             }
         }
@@ -151,7 +172,7 @@ namespace ProfileParser {
             std::string raceName = ToLowercase(race->GetFormEditorID());
             for (const auto& [raceKey, raceProfile] : ProfileRepository::GetRaceProfiles()) {
                 if (raceName.find(raceKey) != std::string::npos) {
-                    MergeProfile(finalProfile, raceProfile);
+                    MergeProfile(profile, raceProfile);
                     break;
                 }
             }
@@ -168,12 +189,12 @@ namespace ProfileParser {
             const auto& actorProfiles = ProfileRepository::GetActorProfiles();
 
             if (!pluginPlusLocalID.empty() && actorProfiles.find(pluginPlusLocalID) != actorProfiles.end()) {
-                MergeProfile(finalProfile, actorProfiles.at(pluginPlusLocalID));
+                MergeProfile(profile, actorProfiles.at(pluginPlusLocalID));
             } else if (actorProfiles.find(actorName) != actorProfiles.end()) {
-                MergeProfile(finalProfile, actorProfiles.at(actorName));
+                MergeProfile(profile, actorProfiles.at(actorName));
             }
         }
 
-        return finalProfile;
+        return profile;
     }
 }
