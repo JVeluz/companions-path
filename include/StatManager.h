@@ -2,9 +2,6 @@
 
 namespace StatManager {
     float GetStatValue(RE::Actor *actor, RE::ActorValue actorValue);
-    
-    int GetAttributePoints(RE::Actor *actor);
-    int GetSkillPoints(RE::Actor *actor);
 
     int GetRemainingAttributePoints(RE::Actor *actor);
     int GetRemainingSkillPoints(RE::Actor *actor);

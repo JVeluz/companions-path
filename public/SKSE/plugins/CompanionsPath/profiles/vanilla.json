@@ -1,0 +1,10 @@
+{
+    "Settings": {
+        "AttributeMultiplier": 1.0,
+        "Harmonize": false,
+        "LevelMultiplier": 1.0,
+        "PerkMultiplier": 1.0,
+        "SkillMultiplier": 1.0,
+        "SyncLevel": false
+    }
+}

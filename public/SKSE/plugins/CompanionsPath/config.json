@@ -1,5 +1,4 @@
 {
     "Language": "english",
-    "Harmonize": true,
-    "SyncLevel": false
+    "Profile": "default"
 }

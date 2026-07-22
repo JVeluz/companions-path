@@ -7,13 +7,6 @@ namespace ActorEngine {
         return actor->GetActorBase()->IsUnique();
     }
 
-    void SetActorMaxLevel(RE::Actor* actor, uint16_t level) {
-        if (!actor) return;
-        if (auto base = actor->GetActorBase()) {
-            base->actorData.level = level;
-        }
-    }
-
     void SetBaseStat(RE::Actor* actor, RE::ActorValue actorValue, float value) {
         if (!actor || actorValue == RE::ActorValue::kNone) return;
         actor->AsActorValueOwner()->SetBaseActorValue(actorValue, value);

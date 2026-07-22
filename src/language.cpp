@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
 namespace {
     std::unordered_map<std::string, std::string> dictionary;
     std::vector<std::string> availableLanguages;
-    const std::string languageDirectory = "Data/SKSE/Plugins/CompanionsPath/languages/";
 }
 
 namespace Language {
@@ -32,18 +31,17 @@ namespace Language {
 
     const std::vector<std::string>& GetLanguages() { return availableLanguages; }
 
-    void Scan() {
+    void Scan(const std::string& path) {
         availableLanguages.clear();
         try {
-            if (fs::exists(languageDirectory) && fs::is_directory(languageDirectory)) {
-                for (const auto& entry : fs::directory_iterator(languageDirectory)) {
+            if (fs::exists(path) && fs::is_directory(path)) {
+                for (const auto& entry : fs::directory_iterator(path)) {
                     if (entry.is_regular_file() && entry.path().extension() == ".json") {
                         availableLanguages.push_back(entry.path().stem().string());
                     }
                 }
-                logger::info("Scanned language directory, found {} languages.", availableLanguages.size());
             } else {
-                logger::error("Language directory does not exist: {}", languageDirectory);
+                logger::error("Language directory does not exist: {}", path);
             }
         } catch (const fs::filesystem_error& e) {
             logger::error("Filesystem error while scanning languages: {}", e.what());

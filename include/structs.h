@@ -5,11 +5,25 @@
 #include <unordered_map>
 #include <vector>
 
+struct Config {
+    std::string language = "english";
+    std::string profile = "default";
+};
+
 struct Profile {
+    bool harmonize = false;
+    bool syncLevel = false;
+    float levelMultiplier = 1.0f;
+    float attributeMultiplier = 1.0f;
+    float skillMultiplier = 1.0f;
+    float perkMultiplier = 1.0f;
+};
+
+struct ActorProfile {
     std::vector<RE::ActorValue> attributes;
     std::vector<RE::ActorValue> skills;
-    std::unordered_map<RE::ActorValue, float> baseValues;
     std::vector<RE::ActorValue> all;
+    std::unordered_map<RE::ActorValue, float> baseValues;
     bool overrideAttributes = false;
     bool overrideSkills = false;
 };

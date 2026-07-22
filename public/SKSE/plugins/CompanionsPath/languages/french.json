@@ -55,5 +55,12 @@
     
     "UI_RESET_ATTRIBUTES": "Réinitialiser les attributs",
     "UI_RESET_SKILLS": "Réinitialiser toutes les compétences",
-    "UI_RESET_PERK_TREE": "Réinitialiser l'arbre"
+    "UI_RESET_PERK_TREE": "Réinitialiser l'arbre",
+    
+    "UI_SETTING_LEVEL_MULTIPLIER": "Multiplicateur de niveau",
+    "UI_SETTING_ATTRIBUTE_MULTIPLIER": "Multiplicateur d'attributs",
+    "UI_SETTING_SKILL_MULTIPLIER": "Multiplicateur de compétences",
+    "UI_SETTING_PERK_MULTIPLIER": "Multiplicateur d'atouts",
+
+    "UI_SAVE_PROFILE": "Sauvegarder le profil"
 }

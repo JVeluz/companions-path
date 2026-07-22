@@ -1,18 +1,14 @@
 #include "ConfigManager.h"
-
 #include <fstream>
-
-#include "Language.h"
 #include "json.hpp"
 #include "logger.h"
-#include "profile.h"
 
 using json = nlohmann::json;
 
 namespace {
     Config config;
     std::string currentPath = "";
-    std::vector<ChangedCallback> changedCallbacks;
+    std::vector<ConfigManager::ChangedCallback> changedCallbacks;
 
     void NotifyChanged() {
         for (const auto& callback : changedCallbacks) {
@@ -25,108 +21,53 @@ namespace ConfigManager {
 
     const Config& GetConfig() { return config; }
 
-    void RegisterChangedCallback(ChangedCallback callback) {
-        changedCallbacks.push_back(callback);
-    }
+    void RegisterChangedCallback(ChangedCallback callback) { changedCallbacks.push_back(callback); }
 
-    void SetHarmonize(bool value) {
-        if (config.harmonize != value) {
-            config.harmonize = value;
-            NotifyChanged();
-            Save();
-        }
-    }
-    
-    void SetLanguage(const std::string& lang) {
-        if (config.currentLanguage != lang) {
-            config.currentLanguage = lang;
-            Language::Load(config.currentLanguage);
+    void SetLanguage(const std::string& language) {
+        if (config.language != language) {
+            config.language = language;
             NotifyChanged();
             Save();
         }
     }
 
-    void SetSyncLevel(bool value) {
-        if (config.syncLevel != value) {
-            config.syncLevel = value;
+    void SetProfile(const std::string& profile) {
+        if (config.profile != profile) {
+            config.profile = profile;
             NotifyChanged();
             Save();
         }
-    }
-
-    void Refresh() {
-        NotifyChanged();
     }
 
     void Load(const std::string& path) {
         currentPath = path;
-
         std::ifstream file(path);
-        if (!file.is_open()) {
-            logger::error("Could not open config file: {}", path);
-            return;
-        }
+        if (!file.is_open()) return;
 
         json configFile;
-        try {
-            file >> configFile;
-        } catch (const json::parse_error& e) {
-            logger::error("JSON parsing error in config file: {}", e.what());
-            return;
-        }
+        try { file >> configFile; } 
+        catch (const json::parse_error&) { return; }
 
-        if (configFile.contains("Language")) {
-            config.currentLanguage = configFile["Language"].get<std::string>();
-        }
-
-        if (configFile.contains("Harmonize")) {
-            if (configFile["Harmonize"].is_boolean()) {
-                config.harmonize = configFile["Harmonize"].get<bool>();
-            } else {
-                logger::error("Harmonize option must be a boolean (true or false).");
-            }
-        }
-
-        if (configFile.contains("SyncLevel")) {
-            if (configFile["SyncLevel"].is_boolean()) {
-                config.syncLevel = configFile["SyncLevel"].get<bool>();
-            } else {
-                logger::error("SyncLevel option must be a boolean.");
-            }
-        }
+        if (configFile.contains("Language")) config.language = configFile["Language"].get<std::string>();
+        if (configFile.contains("Profile")) config.profile = configFile["Profile"].get<std::string>();
 
         NotifyChanged();
     }
 
     void Save() {
-        if (currentPath.empty()) {
-            return;
-        }
+        if (currentPath.empty()) return;
 
         json configFile;
-
         std::ifstream inFile(currentPath);
         if (inFile.is_open()) {
-            try {
-                inFile >> configFile;
-            } catch (const json::parse_error& e) {
-                logger::error("Failed to parse existing config before saving. Aborting save to prevent data loss. Error: {}", e.what());
-                inFile.close();
-                return;
-            }
+            try { inFile >> configFile; } catch (...) {}
             inFile.close();
         }
 
-        configFile["Harmonize"] = config.harmonize;
-        configFile["SyncLevel"] = config.syncLevel;
-        configFile["Language"] = config.currentLanguage;
+        configFile["Language"] = config.language;
+        configFile["Profile"] = config.profile;
 
         std::ofstream outFile(currentPath);
-        if (outFile.is_open()) {
-            outFile << configFile.dump(4);
-            outFile.close();
-        } else {
-            logger::error("Could not open config file for writing: {}", currentPath);
-        }
+        if (outFile.is_open()) outFile << configFile.dump(4);
     }
 }

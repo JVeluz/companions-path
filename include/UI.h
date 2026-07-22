@@ -14,6 +14,7 @@ namespace UI {
     }
 
     namespace Settings {
+        void RefreshProfiles();
         void __stdcall Render();
     }
 }

@@ -1,27 +1,11 @@
 {
-    "Tags": {
-        "Creature": {
-            "Attributes": [
-                "Health",
-                "Stamina"
-            ],
-            "Skills": [
-                "UnarmedDamage",
-                "DamageResist"
-            ],
-            "BaseValues": {
-                "Health": 100,
-                "Magicka": 0,
-                "Stamina": 100
-            }
-        }
-    },
+    "Actors": {},
     "Races": {
         "Argonian": {
             "BaseValues": {
-                "Lockpicking": 25,
                 "Alteration": 20,
                 "LightArmor": 20,
+                "Lockpicking": 25,
                 "Pickpocket": 20,
                 "Restoration": 20,
                 "Sneak": 20
@@ -29,9 +13,9 @@
         },
         "Breton": {
             "BaseValues": {
-                "Conjuration": 25,
                 "Alchemy": 20,
                 "Alteration": 20,
+                "Conjuration": 25,
                 "Illusion": 20,
                 "Restoration": 20,
                 "Speech": 20
@@ -39,9 +23,9 @@
         },
         "DarkElf": {
             "BaseValues": {
-                "Destruction": 25,
                 "Alchemy": 20,
                 "Alteration": 20,
+                "Destruction": 25,
                 "Illusion": 20,
                 "LightArmor": 20,
                 "Sneak": 20
@@ -49,50 +33,40 @@
         },
         "HighElf": {
             "BaseValues": {
-                "Magicka": 150,
-                "Illusion": 25,
                 "Alteration": 20,
                 "Conjuration": 20,
                 "Destruction": 20,
                 "Enchanting": 20,
+                "Illusion": 25,
+                "Magicka": 150,
                 "Restoration": 20
             }
         },
         "Imperial": {
             "BaseValues": {
-                "Restoration": 25,
                 "Block": 20,
                 "Destruction": 20,
                 "Enchanting": 20,
                 "HeavyArmor": 20,
-                "OneHanded": 20
-            }
-        },
-        "hajiit": {
-            "BaseValues": {
-                "Sneak": 25,
-                "Alchemy": 20,
-                "Archery": 20,
-                "Lockpicking": 20,
-                "Pickpocket": 20,
-                "OneHanded": 20
+                "OneHanded": 20,
+                "Restoration": 25
             }
         },
         "Nord": {
             "BaseValues": {
-                "TwoHanded": 25,
                 "Block": 20,
                 "LightArmor": 20,
                 "OneHanded": 20,
                 "Smithing": 20,
-                "Speech": 20
+                "Speech": 20,
+                "TwoHanded": 25
             }
         },
         "Orc": {
             "BaseValues": {
-                "HeavyArmor": 25,
                 "Block": 20,
                 "Enchanting": 20,
+                "HeavyArmor": 25,
                 "OneHanded": 20,
                 "Smithing": 20,
                 "TwoHanded": 20
@@ -100,22 +74,12 @@
         },
         "Redguard": {
             "BaseValues": {
-                "OneHanded": 25,
                 "Alteration": 20,
                 "Archery": 20,
                 "Block": 20,
                 "Destruction": 20,
+                "OneHanded": 25,
                 "Smithing": 20
-            }
-        },
-        "WoodElf": {
-            "BaseValues": {
-                "Archery": 25,
-                "Alchemy": 20,
-                "LightArmor": 20,
-                "Lockpicking": 20,
-                "Pickpocket": 20,
-                "Sneak": 20
             }
         },
         "Troll": {
@@ -123,7 +87,51 @@
                 "Health": 250,
                 "Stamina": 150
             }
+        },
+        "WoodElf": {
+            "BaseValues": {
+                "Alchemy": 20,
+                "Archery": 25,
+                "LightArmor": 20,
+                "Lockpicking": 20,
+                "Pickpocket": 20,
+                "Sneak": 20
+            }
+        },
+        "hajiit": {
+            "BaseValues": {
+                "Alchemy": 20,
+                "Archery": 20,
+                "Lockpicking": 20,
+                "OneHanded": 20,
+                "Pickpocket": 20,
+                "Sneak": 25
+            }
         }
     },
-    "Actors": {}
+    "Settings": {
+        "AttributeMultiplier": 1.0,
+        "Harmonize": true,
+        "LevelMultiplier": 1.0,
+        "PerkMultiplier": 1.0,
+        "SkillMultiplier": 1.0,
+        "SyncLevel": true
+    },
+    "Tags": {
+        "Creature": {
+            "Attributes": [
+                "Health",
+                "Stamina"
+            ],
+            "BaseValues": {
+                "Health": 100,
+                "Magicka": 0,
+                "Stamina": 100
+            },
+            "Skills": [
+                "UnarmedDamage",
+                "DamageResist"
+            ]
+        }
+    }
 }

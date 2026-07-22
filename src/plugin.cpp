@@ -1,50 +1,51 @@
 #include "ConfigManager.h"
 #include "EventManager.h"
 #include "FollowerManager.h"
+#include "Language.h"
 #include "Logger.h"
 #include "PerkManager.h"
+#include "ProfileManager.h"
+#include "ProfileRepository.h"
 #include "StatManager.h"
 #include "Storage.h"
 #include "UI.h"
-#include "Language.h"
-#include "profile.h"
+
+#define LANGUAGES_FOLDER "Data/SKSE/Plugins/CompanionsPath/languages"
+#define PROFILES_FOLDER "Data/SKSE/Plugins/CompanionsPath/profiles"
+#define CONFIG_FILE "Data/SKSE/Plugins/CompanionsPath/config.json"
 
 void OnMessage(SKSE::MessagingInterface::Message* message) {
     switch (message->type) {
         case SKSE::MessagingInterface::kDataLoaded: {
-       
             auto setting = RE::INISettingCollection::GetSingleton()->GetSetting("sLanguage:General");
             std::string gameLanguage = setting ? setting->GetString() : "english";
-            
-            Language::Load(std::format("Data/SKSE/Plugins/CompanionsPath/languages/{}.json", gameLanguage));
+            Language::Load(LANGUAGES_FOLDER + std::format("/{}.json", gameLanguage));
 
-            Language::Scan();
-            
             ConfigManager::RegisterChangedCallback([](const Config& newConfig) {
-                logger::info("Config has changed !");
-                
-                ProfileParser::ClearCache();
-                
-                if (ConfigManager::GetConfig().currentLanguage != newConfig.currentLanguage) {
-                    Language::Load(std::format("Data/SKSE/Plugins/CompanionsPath/languages/{}.json", newConfig.currentLanguage));
-                }
-                if (newConfig.syncLevel) {
-                    FollowerManager::SyncLevels();
-                }
-                if (newConfig.harmonize) {
+                Language::Load(LANGUAGES_FOLDER + std::format("/{}.json", newConfig.language));
+                Language::Scan(LANGUAGES_FOLDER);
+
+                ProfileManager::Load(PROFILES_FOLDER + std::format("/{}.json", newConfig.profile));
+                ProfileRepository::Scan(PROFILES_FOLDER);
+                UI::Settings::RefreshProfiles();
+
+                const auto& currentProfile = ProfileManager::GetProfile();
+
+                PerkManager::Harmonize(currentProfile.harmonize);
+
+                if (currentProfile.harmonize) {
                     StatManager::Harmonize();
                 }
-                PerkManager::Harmonize(newConfig.harmonize);
             });
-            
-            ConfigManager::Load("Data/SKSE/Plugins/CompanionsPath/config.json");
-            ProfileRepository::Load("Data/SKSE/Plugins/CompanionsPath/profiles/default.json");
+
+            ConfigManager::Load(CONFIG_FILE);
 
             PerkManager::Initialize();
-            
+
             Storage::Register();
             EventManager::Register();
             UI::Register();
+
             break;
         }
         case SKSE::MessagingInterface::kPostLoadGame:

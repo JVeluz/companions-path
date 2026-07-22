@@ -2,6 +2,8 @@
 
 namespace Rules {
 
+    int GetLevel(RE::Actor* actor);
+
     namespace Stats {
         bool IsCalculatedStat(RE::ActorValue actorValue);
         bool IsAttribute(RE::Actor* actor, RE::ActorValue actorValue);

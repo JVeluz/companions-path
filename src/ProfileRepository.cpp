@@ -1,9 +1,13 @@
-#include "profile.h"
+#include "ProfileRepository.h"
 
 #include <algorithm>
 #include <cctype>
-#include <format>
+#include <filesystem>
+#include <fstream>
 #include <json.hpp>
+
+#include "logger.h"
+#include "structs.h"
 
 namespace {
     std::string ToLowercase(std::string_view str) {
@@ -15,11 +19,20 @@ namespace {
 
 namespace ProfileRepository {
 
+    namespace fs = std::filesystem;
+
     namespace {
-        std::unordered_map<std::string, Profile> tagProfiles;
-        std::unordered_map<std::string, Profile> raceProfiles;
-        std::unordered_map<std::string, Profile> actorProfiles;
-        Profile defaultHumanoidProfile;
+        Profile profile;
+
+        std::vector<std::string> availableProfiles;
+
+        std::unordered_map<std::string, ActorProfile> tagProfiles;
+        std::unordered_map<std::string, ActorProfile> raceProfiles;
+        std::unordered_map<std::string, ActorProfile> actorProfiles;
+        ActorProfile defaultHumanoidProfile;
+
+        std::string currentLoadedPath;
+        nlohmann::json currentProfileJson;
 
         RE::ActorValue StringToActorValue(const std::string& str) {
             static const std::unordered_map<std::string, RE::ActorValue> map = {{"Health", RE::ActorValue::kHealth},
@@ -51,46 +64,103 @@ namespace ProfileRepository {
             return RE::ActorValue::kNone;
         }
 
-        Profile ParseProfile(const nlohmann::json& jProfile) {
-            Profile profile;
+        ActorProfile ParseProfile(const nlohmann::json& jProfile) {
+            ActorProfile actorProfile;
 
             if (jProfile.contains("Attributes")) {
                 for (const auto& attr : jProfile["Attributes"]) {
                     auto av = StringToActorValue(attr);
-                    if (av != RE::ActorValue::kNone) profile.attributes.push_back(av);
+                    if (av != RE::ActorValue::kNone) actorProfile.attributes.push_back(av);
                 }
-                profile.overrideAttributes = true;
+                actorProfile.overrideAttributes = true;
             }
             if (jProfile.contains("Skills")) {
                 for (const auto& skill : jProfile["Skills"]) {
                     auto av = StringToActorValue(skill);
-                    if (av != RE::ActorValue::kNone) profile.skills.push_back(av);
+                    if (av != RE::ActorValue::kNone) actorProfile.skills.push_back(av);
                 }
-                profile.overrideSkills = true;
+                actorProfile.overrideSkills = true;
             }
             if (jProfile.contains("BaseValues")) {
                 for (auto& [key, value] : jProfile["BaseValues"].items()) {
                     auto av = StringToActorValue(key);
                     if (av != RE::ActorValue::kNone) {
-                        profile.baseValues[av] = value.get<float>();
+                        actorProfile.baseValues[av] = value.get<float>();
                     }
                 }
             }
 
-            profile.all = profile.attributes;
-            profile.all.insert(profile.all.end(), profile.skills.begin(), profile.skills.end());
+            actorProfile.all = actorProfile.attributes;
+            actorProfile.all.insert(actorProfile.all.end(), actorProfile.skills.begin(), actorProfile.skills.end());
 
-            return profile;
+            return actorProfile;
         }
 
-        void LoadProfileCategory(const nlohmann::json& config, const char* categoryName, std::unordered_map<std::string, Profile>& targetMap) {
+        void LoadProfileCategory(const nlohmann::json& config, const char* categoryName, std::unordered_map<std::string, ActorProfile>& targetMap) {
             if (config.contains(categoryName)) {
                 for (auto& [key, data] : config[categoryName].items()) {
                     targetMap[ToLowercase(key)] = ParseProfile(data);
                 }
             }
         }
+    }
 
+    const Profile& GetProfile() { return profile; }
+    const ActorProfile& GetDefaultProfile() { return defaultHumanoidProfile; }
+
+    const std::vector<std::string>& GetProfiles() { return availableProfiles; }
+    const std::string& GetProfileName(int index) { return availableProfiles[index]; }
+
+    const std::unordered_map<std::string, ActorProfile>& GetTagProfiles() { return tagProfiles; }
+    const std::unordered_map<std::string, ActorProfile>& GetRaceProfiles() { return raceProfiles; }
+    const std::unordered_map<std::string, ActorProfile>& GetActorProfiles() { return actorProfiles; }
+
+    void UpdateSettings(const Profile& newSettings) {
+        profile.harmonize = newSettings.harmonize;
+        profile.syncLevel = newSettings.syncLevel;
+        profile.levelMultiplier = newSettings.levelMultiplier;
+        profile.attributeMultiplier = newSettings.attributeMultiplier;
+        profile.skillMultiplier = newSettings.skillMultiplier;
+        profile.perkMultiplier = newSettings.perkMultiplier;
+
+        currentProfileJson["Settings"]["Harmonize"] = profile.harmonize;
+        currentProfileJson["Settings"]["SyncLevel"] = profile.syncLevel;
+        currentProfileJson["Settings"]["LevelMultiplier"] = profile.levelMultiplier;
+        currentProfileJson["Settings"]["AttributeMultiplier"] = profile.attributeMultiplier;
+        currentProfileJson["Settings"]["SkillMultiplier"] = profile.skillMultiplier;
+        currentProfileJson["Settings"]["PerkMultiplier"] = profile.perkMultiplier;
+    }
+
+    void Save() {
+        if (currentLoadedPath.empty()) {
+            logger::error("Cannot save profile: No profile currently loaded.");
+            return;
+        }
+
+        std::ofstream file(currentLoadedPath);
+        if (file.is_open()) {
+            file << currentProfileJson.dump(4);
+            logger::info("Profile successfully saved to : {}", currentLoadedPath);
+        } else {
+            logger::error("Failed to save profile at : {}", currentLoadedPath);
+        }
+    }
+
+    void Scan(const std::string& path) {
+        availableProfiles.clear();
+        try {
+            if (fs::exists(path) && fs::is_directory(path)) {
+                for (const auto& entry : fs::directory_iterator(path)) {
+                    if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                        availableProfiles.push_back(entry.path().stem().string());
+                    }
+                }
+            } else {
+                logger::error("Directory does not exist: {}", path);
+            }
+        } catch (const fs::filesystem_error& e) {
+            logger::error("Filesystem error while scanning profiles: {}", e.what());
+        }
     }
 
     void Load(const std::string& path) {
@@ -100,12 +170,23 @@ namespace ProfileRepository {
             return;
         }
 
-        nlohmann::json profilesFile;
-        file >> profilesFile;
+        currentLoadedPath = path;
+        file >> currentProfileJson;
 
         tagProfiles.clear();
         raceProfiles.clear();
         actorProfiles.clear();
+        profile = Profile();
+
+        if (currentProfileJson.contains("Settings")) {
+            const auto& gs = currentProfileJson["Settings"];
+            if (gs.contains("Harmonize")) profile.harmonize = gs["Harmonize"].get<bool>();
+            if (gs.contains("SyncLevel")) profile.syncLevel = gs["SyncLevel"].get<bool>();
+            if (gs.contains("LevelMultiplier")) profile.levelMultiplier = gs["LevelMultiplier"].get<float>();
+            if (gs.contains("AttributeMultiplier")) profile.attributeMultiplier = gs["AttributeMultiplier"].get<float>();
+            if (gs.contains("SkillMultiplier")) profile.skillMultiplier = gs["SkillMultiplier"].get<float>();
+            if (gs.contains("PerkMultiplier")) profile.perkMultiplier = gs["PerkMultiplier"].get<float>();
+        }
 
         defaultHumanoidProfile.attributes = {RE::ActorValue::kHealth, RE::ActorValue::kMagicka, RE::ActorValue::kStamina};
         defaultHumanoidProfile.skills = {RE::ActorValue::kOneHanded,   RE::ActorValue::kTwoHanded,   RE::ActorValue::kBlock,      RE::ActorValue::kHeavyArmor,  RE::ActorValue::kLightArmor, RE::ActorValue::kArchery,
@@ -114,87 +195,8 @@ namespace ProfileRepository {
         defaultHumanoidProfile.all = defaultHumanoidProfile.attributes;
         defaultHumanoidProfile.all.insert(defaultHumanoidProfile.all.end(), defaultHumanoidProfile.skills.begin(), defaultHumanoidProfile.skills.end());
 
-        LoadProfileCategory(profilesFile, "Tags", tagProfiles);
-        LoadProfileCategory(profilesFile, "Races", raceProfiles);
-        LoadProfileCategory(profilesFile, "Actors", actorProfiles);
-    }
-
-    const std::unordered_map<std::string, Profile>& GetTagProfiles() { return tagProfiles; }
-    const std::unordered_map<std::string, Profile>& GetRaceProfiles() { return raceProfiles; }
-    const std::unordered_map<std::string, Profile>& GetActorProfiles() { return actorProfiles; }
-    const Profile& GetDefaultProfile() { return defaultHumanoidProfile; }
-}
-
-namespace ProfileParser {
-
-    namespace {
-        std::unordered_map<RE::FormID, Profile> profileCache;
-
-        void MergeProfile(Profile& target, const Profile& source) {
-            if (source.overrideAttributes) {
-                target.attributes = source.attributes;
-            }
-            if (source.overrideSkills) {
-                target.skills = source.skills;
-            }
-            if (source.overrideAttributes || source.overrideSkills) {
-                target.all = target.attributes;
-                target.all.insert(target.all.end(), target.skills.begin(), target.skills.end());
-            }
-            for (const auto& [av, value] : source.baseValues) {
-                target.baseValues[av] = value;
-            }
-        }
-    }
-
-    void ClearCache() {
-        profileCache.clear();
-    }
-
-    Profile GetProfile(RE::Actor* actor) {
-        if (!actor) return ProfileRepository::GetDefaultProfile();
-
-        auto it = profileCache.find(actor->GetFormID());
-        if (it != profileCache.end()) {
-            return it->second;
-        }
-
-        Profile profile = ProfileRepository::GetDefaultProfile();
-
-        for (const auto& [tagKey, tagProfile] : ProfileRepository::GetTagProfiles()) {
-            if (actor->HasKeywordString(tagKey) || actor->HasKeywordString("actortype" + tagKey)) {
-                MergeProfile(profile, tagProfile);
-                break;
-            }
-        }
-
-        if (auto race = actor->GetRace()) {
-            std::string raceName = ToLowercase(race->GetFormEditorID());
-            for (const auto& [raceKey, raceProfile] : ProfileRepository::GetRaceProfiles()) {
-                if (raceName.find(raceKey) != std::string::npos) {
-                    MergeProfile(profile, raceProfile);
-                    break;
-                }
-            }
-        }
-
-        if (auto actorBase = actor->GetActorBase()) {
-            std::string pluginPlusLocalID = "";
-            if (auto file = actorBase->GetFile(0)) {
-                uint32_t localID = actorBase->GetFormID() & 0x00FFFFFF;
-                pluginPlusLocalID = ToLowercase(std::format("{}|{:x}", file->GetFilename(), localID));
-            }
-
-            std::string actorName = ToLowercase(actorBase->GetName());
-            const auto& actorProfiles = ProfileRepository::GetActorProfiles();
-
-            if (!pluginPlusLocalID.empty() && actorProfiles.find(pluginPlusLocalID) != actorProfiles.end()) {
-                MergeProfile(profile, actorProfiles.at(pluginPlusLocalID));
-            } else if (actorProfiles.find(actorName) != actorProfiles.end()) {
-                MergeProfile(profile, actorProfiles.at(actorName));
-            }
-        }
-
-        return profile;
+        LoadProfileCategory(currentProfileJson, "Tags", tagProfiles);
+        LoadProfileCategory(currentProfileJson, "Races", raceProfiles);
+        LoadProfileCategory(currentProfileJson, "Actors", actorProfiles);
     }
 }

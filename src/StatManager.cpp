@@ -6,7 +6,7 @@
 #include "FollowerManager.h"
 #include "Rules.h"
 #include "Storage.h"
-#include "profile.h"
+#include "ProfileManager.h"
 
 namespace {
 
@@ -44,29 +44,21 @@ namespace StatManager {
         return Rules::Stats::CalculateStatValue(actor, actorValue, points);
     }
 
-    int GetAttributePoints(RE::Actor *actor) {
-        return Rules::Stats::GetAttributePoints(actor);
-    }
-    
-    int GetSkillPoints(RE::Actor *actor) {
-        return Rules::Stats::GetSkillPoints(actor);
-    }
-
     int GetRemainingAttributePoints(RE::Actor* actor) {
         int total = Rules::Stats::GetAttributePoints(actor);
-        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).attributes);
+        int spent = GetSpentPoints(actor, ProfileManager::GetActorProfile(actor).attributes);
         return total - spent;
     }
 
     int GetRemainingSkillPoints(RE::Actor* actor) {
         int total = Rules::Stats::GetSkillPoints(actor);
-        int spent = GetSpentPoints(actor, ProfileParser::GetProfile(actor).skills);
+        int spent = GetSpentPoints(actor, ProfileManager::GetActorProfile(actor).skills);
         return total - spent;
     }
 
-    void ResetAttributes(RE::Actor* actor) { Reset(actor, ProfileParser::GetProfile(actor).attributes); }
+    void ResetAttributes(RE::Actor* actor) { Reset(actor, ProfileManager::GetActorProfile(actor).attributes); }
 
-    void ResetSkills(RE::Actor* actor) { Reset(actor, ProfileParser::GetProfile(actor).skills); }
+    void ResetSkills(RE::Actor* actor) { Reset(actor, ProfileManager::GetActorProfile(actor).skills); }
 
     bool HasPointsLeft(RE::Actor* actor, RE::ActorValue actorValue) {
         if (Rules::Stats::IsAttribute(actor, actorValue)) {
@@ -91,7 +83,7 @@ namespace StatManager {
     void Harmonize() {
         for (auto actorPtr : FollowerManager::GetActorPtrs()) {
             auto actor = actorPtr.get();
-            auto profile = ProfileParser::GetProfile(actor);
+            auto profile = ProfileManager::GetActorProfile(actor);
 
             for (const auto& actorValue : profile.all) {
                 SetStat(actor, actorValue, Storage::Stats::GetPoints(actor, actorValue));

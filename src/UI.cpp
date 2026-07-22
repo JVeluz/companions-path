@@ -9,8 +9,9 @@
 #include "FollowerManager.h"
 #include "Language.h"
 #include "PerkManager.h"
+#include "ProfileManager.h"
+#include "Rules.h"
 #include "StatManager.h"
-#include "profile.h"
 #include "structs.h"
 
 namespace {
@@ -163,14 +164,14 @@ namespace UI {
                 return;
             }
 
-            auto profile = ProfileParser::GetProfile(selectedActor);
+            auto profile = ProfileManager::GetActorProfile(selectedActor);
 
             int remainingAttributePoints = StatManager::GetRemainingAttributePoints(selectedActor);
             int remainingSkillPoints = StatManager::GetRemainingSkillPoints(selectedActor);
-            int maxAttributePoints = StatManager::GetAttributePoints(selectedActor);
-            int maxSkillPoints = StatManager::GetSkillPoints(selectedActor);
+            int maxAttributePoints = Rules::Stats::GetAttributePoints(selectedActor);
+            int maxSkillPoints = Rules::Stats::GetSkillPoints(selectedActor);
 
-            ImGuiMCP::Text(Language::GetString("UI_LEVEL"), selectedActor->GetLevel());
+            ImGuiMCP::Text(Language::GetString("UI_LEVEL"), Rules::GetLevel(selectedActor));
 
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
@@ -223,19 +224,62 @@ namespace UI {
     }
 
     namespace Settings {
+
+        std::vector<const char*> profiles;
+        int selectedProfileIndex = 0;
+
+        void RefreshProfiles() {
+            profiles.clear();
+            for (const std::string& profileName : ProfileManager::GetProfiles()) {
+                profiles.push_back(profileName.c_str());
+            }
+        }
+
         void __stdcall Render() {
-            if (ImGuiMCP::Button(Language::GetString("UI_RELOAD_CONFIG"))) {
-                ConfigManager::Refresh();
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            if (ImGuiMCP::Combo("##TargetProfiles", &selectedProfileIndex, profiles.data(), static_cast<int>(profiles.size()))) {
+                ConfigManager::SetProfile(ProfileManager::GetProfileName(selectedProfileIndex));
             }
 
-            bool harmonize = ConfigManager::GetConfig().harmonize;
-            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_HARMONIZE"), &harmonize)) {
-                ConfigManager::SetHarmonize(harmonize);
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            Profile profile = ProfileManager::GetProfile();
+            bool hasChanged = false;
+
+            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_HARMONIZE"), &profile.harmonize)) hasChanged = true;
+            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_SYNC_LEVEL"), &profile.syncLevel)) hasChanged = true;
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            if (ImGuiMCP::InputFloat(Language::GetString("UI_SETTING_LEVEL_MULTIPLIER"), &profile.levelMultiplier, 0.0f, 0.0f, "%.2f")) hasChanged = true;
+
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            if (ImGuiMCP::InputFloat(Language::GetString("UI_SETTING_ATTRIBUTE_MULTIPLIER"), &profile.attributeMultiplier, 0.0f, 0.0f, "%.2f")) hasChanged = true;
+
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            if (ImGuiMCP::InputFloat(Language::GetString("UI_SETTING_SKILL_MULTIPLIER"), &profile.skillMultiplier, 0.0f, 0.0f, "%.2f")) hasChanged = true;
+
+            ImGuiMCP::SetNextItemWidth(200.0f);
+            if (ImGuiMCP::InputFloat(Language::GetString("UI_SETTING_PERK_MULTIPLIER"), &profile.perkMultiplier, 0.0f, 0.0f, "%.2f")) hasChanged = true;
+
+            if (hasChanged) {
+                ProfileManager::UpdateSettings(profile);
             }
 
-            bool syncLevel = ConfigManager::GetConfig().syncLevel;
-            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_SYNC_LEVEL"), &syncLevel)) {
-                ConfigManager::SetSyncLevel(syncLevel);
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            const char* saveString = Language::GetString("UI_SAVE_PROFILE");
+            if (!saveString || saveString[0] == '\0') saveString = "Save Profile to JSON";
+
+            if (ImGuiMCP::Button(saveString)) {
+                ProfileManager::SaveCurrentProfile();
             }
         }
     }
@@ -385,7 +429,7 @@ namespace UI {
             //     return;
             // }
 
-            auto profile = ProfileParser::GetProfile(selectedActor);
+            auto profile = ProfileManager::GetActorProfile(selectedActor);
 
             if (profile.skills.empty()) {
                 ImGuiMCP::Text("%s", Language::GetString("UI_NO_SKILLS_PROFILE"));

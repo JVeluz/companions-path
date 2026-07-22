@@ -1,26 +1,18 @@
 #pragma once
-
+#include "structs.h"
 #include <string>
 #include <functional>
-
-struct Config {
-    bool harmonize = true;
-    bool syncLevel = false;
-    std::string currentLanguage = "english";
-};
-
-using ChangedCallback = std::function<void(const Config&)>;
+#include <vector>
 
 namespace ConfigManager {
+    using ChangedCallback = std::function<void(const Config&)>;
+
     const Config& GetConfig();
-    
     void RegisterChangedCallback(ChangedCallback callback);
+
+    void SetLanguage(const std::string& language);
+    void SetProfile(const std::string& profile);
 
     void Load(const std::string& path);
     void Save();
-    void Refresh();
-
-    void SetLanguage(const std::string& lang);
-    void SetHarmonize(bool value);
-    void SetSyncLevel(bool value);
 }

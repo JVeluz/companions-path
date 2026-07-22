@@ -31,17 +31,4 @@ namespace FollowerManager {
         }
     }
 
-    void SyncLevels() {
-        // auto player = RE::PlayerCharacter::GetSingleton();
-
-        for (auto& ptr : activeFollowers) {
-            if (auto actor = ptr.get()) {
-                auto base = actor->GetActorBase();
-                base->actorData.level = 1000;
-                // base->actorData.actorBaseFlags.set(RE::ACTOR_BASE_DATA::Flag::kPCLevelMult);
-                // base->actorData.calcLevelMax = 0;
-            }
-        }
-    }
-
 }
