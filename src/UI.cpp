@@ -123,47 +123,7 @@ namespace UI {
             }
         }
 
-        void __stdcall Render() {
-            ImGuiMCP::SetNextItemWidth(200.0f);
-
-            auto followers = FollowerManager::GetActorPtrs();
-
-            if (followers.empty()) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
-            } else {
-                std::vector<const char*> names;
-                static std::string unloadedStr = Language::GetString("UI_UNKNOWN_UNLOADED");
-
-                for (auto actorPtr : followers) {
-                    if (auto actor = actorPtr.get()) {
-                        names.push_back(actorPtr->GetName());
-                    } else {
-                        names.push_back(Language::GetString("UI_UNKNOWN_UNLOADED"));
-                    }
-                }
-                ImGuiMCP::Combo("##Target", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
-            }
-
-            ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
-                FollowerManager::Refresh();
-                selectedCompanionIndex = 0;
-                StatManager::Harmonize();
-            }
-
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
-            ImGuiMCP::Spacing();
-
-            if (followers.empty()) return;
-            if (selectedCompanionIndex < 0 || selectedCompanionIndex >= followers.size()) return;
-
-            auto selectedActor = FollowerManager::GetActor(selectedCompanionIndex);
-            if (!selectedActor) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_ACTOR_INVALID"));
-                return;
-            }
-
+        void RenderSingleFollowerTab(RE::Actor* selectedActor) {
             auto profile = ProfileManager::GetActorProfile(selectedActor);
 
             int remainingAttributePoints = StatManager::GetRemainingAttributePoints(selectedActor);
@@ -171,13 +131,13 @@ namespace UI {
             int maxAttributePoints = Rules::Stats::GetAttributePoints(selectedActor);
             int maxSkillPoints = Rules::Stats::GetSkillPoints(selectedActor);
 
-            ImGuiMCP::Text(Language::GetString("UI_LEVEL"), Rules::GetLevel(selectedActor));
+            ImGuiMCP::Text(Language::GetString("UI_LEVEL_FORMAT"), Rules::GetLevel(selectedActor));
 
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            ImGuiMCP::Text(Language::GetString("UI_ATTRIBUTES"), remainingAttributePoints, maxAttributePoints);
+            ImGuiMCP::Text(Language::GetString("UI_ATTRIBUTES_POINTS_FORMAT"), remainingAttributePoints, maxAttributePoints);
             ImGuiMCP::Spacing();
 
             ImGuiMCP::Columns(3, "AttributesColumns", false);
@@ -193,7 +153,7 @@ namespace UI {
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            ImGuiMCP::Text(Language::GetString("UI_SKILLS"), remainingSkillPoints, maxSkillPoints);
+            ImGuiMCP::Text(Language::GetString("UI_SKILLS_POINTS_FORMAT"), remainingSkillPoints, maxSkillPoints);
             ImGuiMCP::Spacing();
 
             ImGuiMCP::Columns(3, "StatsColumns", false);
@@ -206,19 +166,104 @@ namespace UI {
             }
 
             ImGuiMCP::Columns(1);
+        }
+
+        void __stdcall Render() {
+            auto followers = FollowerManager::GetActorPtrs();
+
+            if (followers.empty()) {
+                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
+                return;
+            }
+
+            if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
+                FollowerManager::Refresh();
+                StatManager::Harmonize();
+            }
 
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (ImGuiMCP::Button(Language::GetString("UI_RESET_ATTRIBUTES"))) {
-                StatManager::ResetAttributes(selectedActor);
-            }
+            if (ImGuiMCP::BeginTabBar("StatsTabBar")) {
+                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"))) {
+                    ImGuiMCP::BeginChild("OverviewScrollArea", ImGuiMCP::ImVec2(0, 0), false, ImGuiMCP::ImGuiWindowFlags_HorizontalScrollbar);
 
-            ImGuiMCP::SameLine();
+                    for (size_t i = 0; i < followers.size(); ++i) {
+                        auto actorPtr = followers[i];
+                        auto actor = actorPtr.get();
+                        std::string name = actor ? actorPtr->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
 
-            if (ImGuiMCP::Button(Language::GetString("UI_RESET_SKILLS"))) {
-                StatManager::ResetSkills(selectedActor);
+                        ImGuiMCP::PushID(actor);
+                        ImGuiMCP::BeginChild("FollowerBox", ImGuiMCP::ImVec2(320, 0), true);
+
+                        ImGuiMCP::Text("%s", name.c_str());
+                        ImGuiMCP::Separator();
+
+                        if (actor) {
+                            auto profile = ProfileManager::GetActorProfile(actor);
+
+                            ImGuiMCP::Text(Language::GetString("UI_LEVEL_FORMAT"), Rules::GetLevel(actor));
+                            ImGuiMCP::Spacing();
+
+                            ImGuiMCP::TextDisabled("%s", Language::GetString("UI_ATTRIBUTES_TITLE"));
+                            for (const auto& attr : profile.attributes) {
+                                float val = StatManager::GetStatValue(actor, attr);
+                                ImGuiMCP::TextWrapped("- %s: %.0f", GetActorValueName(attr), val);
+                            }
+
+                            ImGuiMCP::Spacing();
+                            ImGuiMCP::TextDisabled("%s", Language::GetString("UI_SKILLS_TITLE"));
+                            for (const auto& skill : profile.skills) {
+                                float val = StatManager::GetStatValue(actor, skill);
+                                ImGuiMCP::TextWrapped("- %s: %.0f", GetActorValueName(skill), val);
+                            }
+
+                            ImGuiMCP::Spacing();
+                            ImGuiMCP::Separator();
+                            ImGuiMCP::Spacing();
+
+                            if (ImGuiMCP::Button(Language::GetString("UI_RESET_ATTRIBUTES"))) {
+                                StatManager::ResetAttributes(actor);
+                            }
+
+                            ImGuiMCP::SameLine();
+
+                            if (ImGuiMCP::Button(Language::GetString("UI_RESET_SKILLS"))) {
+                                StatManager::ResetSkills(actor);
+                            }
+                        } else {
+                            ImGuiMCP::TextDisabled("%s", Language::GetString("UI_ACTOR_INVALID"));
+                        }
+
+                        ImGuiMCP::EndChild();
+                        ImGuiMCP::PopID();
+
+                        if (i < followers.size() - 1) {
+                            ImGuiMCP::SameLine();
+                        }
+                    }
+
+                    ImGuiMCP::EndChild();
+                    ImGuiMCP::EndTabItem();
+                }
+
+                for (size_t i = 0; i < followers.size(); ++i) {
+                    auto actor = followers[i].get();
+                    std::string baseName = actor ? followers[i]->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
+                    std::string tabName = baseName + "###StatsTab_" + std::to_string(reinterpret_cast<uintptr_t>(actor));
+
+                    if (ImGuiMCP::BeginTabItem(tabName.c_str())) {
+                        if (actor) {
+                            RenderSingleFollowerTab(actor);
+                        } else {
+                            ImGuiMCP::Text("%s", Language::GetString("UI_ACTOR_INVALID"));
+                        }
+                        ImGuiMCP::EndTabItem();
+                    }
+                }
+
+                ImGuiMCP::EndTabBar();
             }
         }
     }
@@ -366,7 +411,7 @@ namespace UI {
 
                     if (canRefund) {
                         ImGuiMCP::SameLine();
-                        if (ImGuiMCP::Button(" - ")) {
+                        if (ImGuiMCP::Button("-")) {
                             PerkManager::Refund(selectedActor, node);
                         }
                     }
@@ -382,53 +427,7 @@ namespace UI {
             }
         }
 
-        void __stdcall Render() {
-            ImGuiMCP::SetNextItemWidth(200.0f);
-
-            auto followers = FollowerManager::GetActorPtrs();
-
-            if (followers.empty()) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
-                return;
-            }
-
-            std::vector<const char*> names;
-            static std::string unloadedStr = Language::GetString("UI_UNKNOWN_UNLOADED");
-
-            for (auto actorPtr : followers) {
-                if (auto actor = actorPtr.get()) {
-                    names.push_back(actorPtr->GetName());
-                } else {
-                    names.push_back(Language::GetString("UI_UNKNOWN_UNLOADED"));
-                }
-            }
-
-            ImGuiMCP::Combo("##TargetPerks", &selectedCompanionIndex, names.data(), static_cast<int>(names.size()));
-
-            ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
-                FollowerManager::Refresh();
-                StatManager::Harmonize();
-                selectedCompanionIndex = 0;
-            }
-
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
-            ImGuiMCP::Spacing();
-
-            if (selectedCompanionIndex >= followers.size()) selectedCompanionIndex = 0;
-
-            auto selectedActor = FollowerManager::GetActor(selectedCompanionIndex);
-            if (!selectedActor) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_ACTOR_INVALID"));
-                return;
-            }
-
-            // if (!FollowerManager::IsUniqueNPC(selectedActor)) {
-            //     ImGuiMCP::Text(Language::GetString("UI_ERROR_GENERIC_NPC"));
-            //     return;
-            // }
-
+        void RenderSingleFollowerTab(RE::Actor* selectedActor) {
             auto profile = ProfileManager::GetActorProfile(selectedActor);
 
             if (profile.skills.empty()) {
@@ -436,14 +435,25 @@ namespace UI {
                 return;
             }
 
-            int remainingPoints = PerkManager::GetRemainingPoints(selectedActor);
-            ImGuiMCP::Text(Language::GetString("UI_PERK_POINTS_AVAILABLE"), remainingPoints);
-            ImGuiMCP::Spacing();
+            ImGuiMCP::PushID(selectedActor);
 
-            static int selectedSkillIndex = 0;
+            static std::map<RE::Actor*, int> selectedSkillIndices;
+            int& selectedSkillIndex = selectedSkillIndices[selectedActor];
+
             if (selectedSkillIndex >= profile.skills.size()) {
                 selectedSkillIndex = 0;
             }
+
+            RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
+            const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            int remainingPoints = PerkManager::GetRemainingPoints(selectedActor);
+            ImGuiMCP::Text(Language::GetString("UI_PERK_POINTS_AVAILABLE"), remainingPoints);
+            ImGuiMCP::Spacing();
 
             std::vector<const char*> skillNames;
             for (auto skill : profile.skills) {
@@ -456,17 +466,133 @@ namespace UI {
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
-            const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
-
             RenderPerkSimpleList(selectedActor, tree);
 
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
+            static RE::Actor* cachedActor = nullptr;
+            static std::vector<std::string> cachedPurchasedPerks;
+
+            if (cachedActor != selectedActor) {
+                cachedActor = selectedActor;
+                cachedPurchasedPerks.clear();
+
+                if (auto base = selectedActor->GetActorBase(); base && base->perks) {
+                    for (std::uint32_t i = 0; i < base->perkCount; ++i) {
+                        if (auto perk = base->perks[i].perk) {
+                            const char* perkName = perk->GetFullName();
+                            if (perkName && perkName[0] != '\0') {
+                                cachedPurchasedPerks.push_back(perkName);
+                            }
+                        }
+                    }
+                }
+                std::sort(cachedPurchasedPerks.begin(), cachedPurchasedPerks.end());
+            }
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
             if (ImGuiMCP::Button(Language::GetString("UI_RESET_PERK_TREE"))) {
-                PerkManager::RefundTree(selectedActor, tree);
+                PerkManager::Refund(selectedActor, tree);
+            }
+
+            ImGuiMCP::PopID();
+        }
+
+        void __stdcall Render() {
+            auto followers = FollowerManager::GetActorPtrs();
+
+            if (followers.empty()) {
+                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
+                return;
+            }
+
+            if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
+                FollowerManager::Refresh();
+                StatManager::Harmonize();
+            }
+
+            ImGuiMCP::Spacing();
+            ImGuiMCP::Separator();
+            ImGuiMCP::Spacing();
+
+            if (ImGuiMCP::BeginTabBar("FollowersPerksTabBar")) {
+                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"))) {
+                    ImGuiMCP::BeginChild("OverviewScrollArea", ImGuiMCP::ImVec2(0, 0), false, ImGuiMCP::ImGuiWindowFlags_HorizontalScrollbar);
+
+                    for (size_t i = 0; i < followers.size(); ++i) {
+                        auto actorPtr = followers[i];
+                        auto actor = actorPtr.get();
+                        std::string name = actor ? actorPtr->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
+
+                        ImGuiMCP::PushID(actor);
+                        ImGuiMCP::BeginChild("FollowerBox", ImGuiMCP::ImVec2(320, 0), true);
+
+                        ImGuiMCP::Text("%s", name.c_str());
+                        ImGuiMCP::Separator();
+
+                        if (actor) {
+                            if (auto base = actor->GetActorBase(); base && base->perks) {
+                                for (std::uint32_t j = 0; j < base->perkCount; ++j) {
+                                    if (auto perk = base->perks[j].perk) {
+                                        const char* perkName = perk->GetFullName();
+                                        if (perkName && perkName[0] != '\0') {
+                                            ImGuiMCP::TextWrapped("- %s", perkName);
+                                            ImGuiMCP::SameLine();
+                                            ImGuiMCP::TextDisabled("(?)");
+                                            if (ImGuiMCP::IsItemHovered()) {
+                                                ImGuiMCP::BeginTooltip();
+                                                RE::BSString perkDesc;
+                                                perk->GetDescription(perkDesc, perk);
+                                                ImGuiMCP::PushTextWrapPos(400.0f);
+                                                ImGuiMCP::TextWrapped("%s", perkDesc.c_str());
+                                                ImGuiMCP::PopTextWrapPos();
+                                                ImGuiMCP::EndTooltip();
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                ImGuiMCP::TextDisabled("%s", Language::GetString("UI_NO_PERKS_OWNED"));
+                            }
+                        }
+
+                        ImGuiMCP::Spacing();
+                        if (ImGuiMCP::Button(Language::GetString("UI_RESET_ALL_SKILLS_BTN"))) {
+                        }
+
+                        ImGuiMCP::EndChild();
+                        ImGuiMCP::PopID();
+
+                        if (i < followers.size() - 1) {
+                            ImGuiMCP::SameLine();
+                        }
+                    }
+
+                    ImGuiMCP::EndChild();
+                    ImGuiMCP::EndTabItem();
+                }
+
+                for (size_t i = 0; i < followers.size(); ++i) {
+                    auto actor = followers[i].get();
+                    std::string baseName = actor ? followers[i]->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
+                    std::string tabName = baseName + "###FollowerTab_" + std::to_string(reinterpret_cast<uintptr_t>(actor));
+
+                    if (ImGuiMCP::BeginTabItem(tabName.c_str())) {
+                        if (actor) {
+                            RenderSingleFollowerTab(actor);
+                        } else {
+                            ImGuiMCP::Text("%s", Language::GetString("UI_ACTOR_INVALID"));
+                        }
+                        ImGuiMCP::EndTabItem();
+                    }
+                }
+
+                ImGuiMCP::EndTabBar();
             }
         }
     }

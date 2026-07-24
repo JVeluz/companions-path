@@ -32,7 +32,7 @@
     "UI_TAB_STATS": "Stats",
     "UI_TAB_PERKS": "Perks",
     "UI_TAB_SETTINGS": "Settings",
-    "UI_SETTING_HARMONIZE": "Harmonize Stats",
+    "UI_SETTING_HARMONIZE": "Harmonize",
     "UI_SETTING_SYNC_LEVEL": "Sync Level",
     "UI_REFRESH_LANGUAGES": "Refresh Languages",
     "UI_SETTING_LANGUAGE": "Language",
@@ -62,5 +62,14 @@
     "UI_SETTING_SKILL_MULTIPLIER": "Skill Multiplier",
     "UI_SETTING_PERK_MULTIPLIER": "Perk Multiplier",
 
-    "UI_SAVE_PROFILE": "Save profile"
+    "UI_SAVE_PROFILE": "Save profile",
+
+    "UI_OVERVIEW_TAB": "Overview",
+    "UI_NO_PERKS_OWNED": "No perks...",
+    "UI_RESET_ALL_SKILLS_BTN": "Reset all trees",
+    "UI_LEVEL_FORMAT": "Level: %d",
+    "UI_ATTRIBUTES_POINTS_FORMAT": "Attributes (%d / %d)",
+    "UI_SKILLS_POINTS_FORMAT": "Skills (%d / %d)",
+    "UI_ATTRIBUTES_TITLE": "Attributes",
+    "UI_SKILLS_TITLE": "Skills"
 }

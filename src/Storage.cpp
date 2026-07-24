@@ -17,7 +17,7 @@ namespace {
 
     void OnRevert(SKSE::SerializationInterface*) {
         storage.clear();
-        logger::info("Storage cleared on Revert.");
+        // logger::info("Storage cleared on Revert.");
     }
 
     void OnSave(SKSE::SerializationInterface* serde) {
@@ -45,7 +45,7 @@ namespace {
                 serde->WriteRecordData(&perkFormID, sizeof(perkFormID));
             }
         }
-        logger::info("Storage saved successfully.");
+        // logger::info("Storage saved successfully.");
     }
 
     void OnLoad(SKSE::SerializationInterface* serde) {
@@ -95,7 +95,7 @@ namespace {
                 storage[newActorFormID] = data;
             }
         }
-        logger::info("Storage loaded successfully.");
+        // logger::info("Storage loaded successfully.");
     }
 }
 
@@ -106,7 +106,7 @@ namespace Storage {
         serialization->SetSaveCallback(OnSave);
         serialization->SetRevertCallback(OnRevert);
         serialization->SetLoadCallback(OnLoad);
-        logger::info("Storage serialization callbacks registered.");
+        // logger::info("Storage serialization callbacks registered.");
     }
 
     void ClearAll() {

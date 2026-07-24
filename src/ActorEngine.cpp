@@ -18,13 +18,14 @@ namespace ActorEngine {
 
         if (actor->HasPerk(perk)) return;
 
-        if (auto base = actor->GetActorBase(); base) {
+        if (auto base = actor->GetActorBase()) {
             if (base->AddPerk(perk, 1)) {
                 for (const auto& perkEntry : perk->perkEntries) {
                     if (perkEntry) {
                         perkEntry->ApplyPerkEntry(actor);
                     }
                 }
+                logger::info("Added {} from {}", perk->GetName(), actor->GetName());
             }
         }
     }
@@ -38,8 +39,20 @@ namespace ActorEngine {
                     perkEntry->RemovePerkEntry(actor);
                 }
             }
-
             base->RemovePerk(perk);
+            logger::info("Added {} from {}", perk->GetName(), actor->GetName());
+        }
+    }
+
+    void RemovePerks(RE::Actor* actor) {
+        if (!actor) return;
+
+        if (auto base = actor->GetActorBase(); base && base->perks) {
+            for (int i = base->perkCount - 1; i >= 0; --i) {
+                if (auto perk = base->perks[i].perk) {
+                    RemovePerk(actor, perk);
+                }
+            }
         }
     }
 }

@@ -10,8 +10,7 @@ namespace FollowerManager {
     std::vector<RE::ActorPtr> GetActorPtrs() { return activeFollowers; }
 
     RE::Actor* GetActor(int index) {
-        if (IsValidIndex(index)) 
-            return activeFollowers[index].get();
+        if (IsValidIndex(index)) return activeFollowers[index].get();
         return nullptr;
     }
 

@@ -216,6 +216,11 @@ namespace PerkManager {
         }
     }
 
+    void Refund(RE::Actor* actor) {
+        ActorEngine::RemovePerks(actor);
+        Storage::Perks::Clear(actor);
+    }
+
     void Refund(RE::Actor* actor, const Perks::PerkNode* node) {
         if (CanRefund(actor, node)) {
             int rank = GetCurrentRank(actor, node);
@@ -225,7 +230,7 @@ namespace PerkManager {
         }
     }
 
-    void RefundTree(RE::Actor* actor, const Perks::PerkTree* tree) {
+    void Refund(RE::Actor* actor, const Perks::PerkTree* tree) {
         if (!actor || !tree) return;
 
         for (const auto& nodePtr : tree->nodes) {
@@ -240,21 +245,21 @@ namespace PerkManager {
         }
     }
 
-    void Harmonize(bool harmonizeActive) {
+    void Reapply() {
         for (auto actorPtr : FollowerManager::GetActorPtrs()) {
             auto actor = actorPtr.get();
-            for (const auto& [av, tree] : perkTrees) {
-                for (const auto& nodePtr : tree.nodes) {
-                    for (auto* perk : nodePtr->ranks) {
-                        if (actor->HasPerk(perk) && !Storage::Perks::HasPurchased(actor, perk)) {
-                            if (harmonizeActive) {
-                                ActorEngine::RemovePerk(actor, perk);
-                            } else {
-                                Storage::Perks::RecordPurchase(actor, perk);
-                            }
-                        }
-                    }
-                }
+            for (auto perk : Storage::Perks::GetPurchased(actor)) {
+                ActorEngine::AddPerk(actor, perk);
+            }
+        }
+    }
+
+    void Harmonize() {
+        for (auto actorPtr : FollowerManager::GetActorPtrs()) {
+            auto actor = actorPtr.get();
+            ActorEngine::RemovePerks(actor);
+            for (auto perk : Storage::Perks::GetPurchased(actor)) {
+                ActorEngine::AddPerk(actor, perk);
             }
         }
     }

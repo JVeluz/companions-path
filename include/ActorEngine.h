@@ -8,4 +8,5 @@ namespace ActorEngine {
 
     void AddPerk(RE::Actor* actor, RE::BGSPerk* perk);
     void RemovePerk(RE::Actor* actor, RE::BGSPerk* perk);
+    void RemovePerks(RE::Actor* actor);
 }
