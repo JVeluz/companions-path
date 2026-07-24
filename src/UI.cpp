@@ -345,8 +345,14 @@ namespace UI {
                     if (perkForm) {
                         RE::BSString perkDesc;
                         perkForm->GetDescription(perkDesc, perkForm);
+                        std::string descStr = perkDesc.c_str();
+                        
+                        if (descStr.empty()) {
+                            descStr = Language::GetString("UI_NO_DESCRIPTION");
+                        }
+                        
                         ImGuiMCP::PushTextWrapPos(400.0f);
-                        ImGuiMCP::TextWrapped("%s", perkDesc.c_str());
+                        ImGuiMCP::TextWrapped("%s", descStr.c_str());
                         ImGuiMCP::PopTextWrapPos();
                     }
                 }
@@ -492,14 +498,6 @@ namespace UI {
                 std::sort(cachedPurchasedPerks.begin(), cachedPurchasedPerks.end());
             }
 
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
-            ImGuiMCP::Spacing();
-
-            if (ImGuiMCP::Button(Language::GetString("UI_RESET_PERK_TREE"))) {
-                PerkManager::Refund(selectedActor, tree);
-            }
-
             ImGuiMCP::PopID();
         }
 
@@ -536,33 +534,110 @@ namespace UI {
                         ImGuiMCP::Separator();
 
                         if (actor) {
+                            auto profile = ProfileManager::GetActorProfile(actor);
+                            bool hasAnyPerks = false;
+                            std::set<RE::FormID> displayedPerkIDs;
+
+                            if (!profile.skills.empty()) {
+                                for (const auto& skill : profile.skills) {
+                                    const Perks::PerkTree* tree = PerkManager::GetPerkTree(skill);
+                                    if (!tree || tree->nodes.empty()) continue;
+
+                                    std::vector<std::pair<std::string, const Perks::PerkNode*>> ownedPerks;
+                                    
+                                    for (const auto& nodePtr : tree->nodes) {
+                                        auto* node = nodePtr.get();
+                                        int rank = PerkManager::GetCurrentRank(actor, node);
+                                        if (rank > 0) {
+                                            std::string perkLabel = node->name + " (" + std::to_string(rank) + "/" + std::to_string(node->maxRanks) + ")";
+                                            ownedPerks.push_back({perkLabel, node});
+                                            
+                                            for (int r = 0; r < rank && r < node->ranks.size(); ++r) {
+                                                if (node->ranks[r]) {
+                                                    displayedPerkIDs.insert(node->ranks[r]->GetFormID());
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!ownedPerks.empty()) {
+                                        hasAnyPerks = true;
+                                        
+                                        ImGuiMCP::Spacing();
+                                        ImGuiMCP::TextDisabled("%s", GetActorValueName(skill));
+                                        
+                                        for (const auto& [perkLabel, node] : ownedPerks) {
+                                            ImGuiMCP::TextWrapped("- %s", perkLabel.c_str());
+                                            ImGuiMCP::SameLine();
+                                            ImGuiMCP::TextDisabled("(?)");
+                                            RenderPerkTooltip(node, PerkManager::GetCurrentRank(actor, node));
+                                        }
+
+                                        ImGuiMCP::Spacing();
+                                        ImGuiMCP::PushID(GetActorValueName(skill));
+                                        if (ImGuiMCP::Button(Language::GetString("UI_RESET_PERK_TREE"))) {
+                                            PerkManager::Refund(actor, tree);
+                                        }
+                                        ImGuiMCP::PopID();
+                                        ImGuiMCP::Separator();
+                                    }
+                                }
+                            }
+
+                            bool hasNativePerks = false;
                             if (auto base = actor->GetActorBase(); base && base->perks) {
                                 for (std::uint32_t j = 0; j < base->perkCount; ++j) {
                                     if (auto perk = base->perks[j].perk) {
-                                        const char* perkName = perk->GetFullName();
-                                        if (perkName && perkName[0] != '\0') {
-                                            ImGuiMCP::TextWrapped("- %s", perkName);
-                                            ImGuiMCP::SameLine();
-                                            ImGuiMCP::TextDisabled("(?)");
-                                            if (ImGuiMCP::IsItemHovered()) {
-                                                ImGuiMCP::BeginTooltip();
-                                                RE::BSString perkDesc;
-                                                perk->GetDescription(perkDesc, perk);
-                                                ImGuiMCP::PushTextWrapPos(400.0f);
-                                                ImGuiMCP::TextWrapped("%s", perkDesc.c_str());
-                                                ImGuiMCP::PopTextWrapPos();
-                                                ImGuiMCP::EndTooltip();
+                                        if (displayedPerkIDs.find(perk->GetFormID()) == displayedPerkIDs.end()) {
+                                            if (!hasNativePerks) {
+                                                if (hasAnyPerks) ImGuiMCP::Spacing();
+                                                ImGuiMCP::TextDisabled("%s", Language::GetString("UI_NATIVE_PERKS"));
+                                                hasNativePerks = true;
+                                                hasAnyPerks = true;
+                                            }
+                                            
+                                            const char* perkName = perk->GetFullName();
+                                            if (perkName && perkName[0] != '\0') {
+                                                ImGuiMCP::TextWrapped("- %s", perkName);
+                                                ImGuiMCP::SameLine();
+                                                ImGuiMCP::TextDisabled("(?)");
+                                                if (ImGuiMCP::IsItemHovered()) {
+                                                    ImGuiMCP::BeginTooltip();
+                                                    RE::BSString perkDesc;
+                                                    perk->GetDescription(perkDesc, perk);
+                                                    std::string descStr = perkDesc.c_str();
+                                                    if (descStr.empty()) {
+                                                        descStr = Language::GetString("UI_NO_DESCRIPTION");
+                                                    }
+                                                    ImGuiMCP::PushTextWrapPos(400.0f);
+                                                    ImGuiMCP::TextWrapped("%s", descStr.c_str());
+                                                    ImGuiMCP::PopTextWrapPos();
+                                                    ImGuiMCP::EndTooltip();
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            } else {
+                            }
+                            
+                            if (hasNativePerks) {
+                                ImGuiMCP::Spacing();
+                                ImGuiMCP::Separator();
+                            }
+
+                            if (!hasAnyPerks) {
                                 ImGuiMCP::TextDisabled("%s", Language::GetString("UI_NO_PERKS_OWNED"));
                             }
+                        } else {
+                            ImGuiMCP::TextDisabled("%s", Language::GetString("UI_ACTOR_INVALID"));
                         }
 
-                        ImGuiMCP::Spacing();
-                        if (ImGuiMCP::Button(Language::GetString("UI_RESET_ALL_SKILLS_BTN"))) {
+                        if (ImGuiMCP::Button(Language::GetString("UI_RESET_ALL_PERK_TREES"))) {
+                            PerkManager::Refund(actor);
+                        }
+
+                        if (ImGuiMCP::Button(Language::GetString("UI_RESET_ALL_PERKS"))) {
+                            PerkManager::RefundAll(actor);
                         }
 
                         ImGuiMCP::EndChild();
@@ -580,7 +655,7 @@ namespace UI {
                 for (size_t i = 0; i < followers.size(); ++i) {
                     auto actor = followers[i].get();
                     std::string baseName = actor ? followers[i]->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
-                    std::string tabName = baseName + "###FollowerTab_" + std::to_string(reinterpret_cast<uintptr_t>(actor));
+                    std::string tabName = baseName + "###" + std::to_string(reinterpret_cast<uintptr_t>(actor));
 
                     if (ImGuiMCP::BeginTabItem(tabName.c_str())) {
                         if (actor) {

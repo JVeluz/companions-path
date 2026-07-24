@@ -22,6 +22,7 @@ namespace PerkManager {
     void Refund(RE::Actor* actor);
     void Refund(RE::Actor* actor, const Perks::PerkNode* node);
     void Refund(RE::Actor* actor, const Perks::PerkTree* tree);
+    void RefundAll(RE::Actor* actor);
 
     void Reapply();
     void Harmonize();

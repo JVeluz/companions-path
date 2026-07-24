@@ -56,6 +56,8 @@
     "UI_RESET_ATTRIBUTES": "Reset Attributes",
     "UI_RESET_SKILLS": "Reset All Skills",
     "UI_RESET_PERK_TREE": "Reset Tree",
+    "UI_RESET_ALL_PERK_TREES": "Reset all trees",
+    "UI_RESET_ALL_PERKS": "Reset all perks (incl. native)",
     
     "UI_SETTING_LEVEL_MULTIPLIER": "Level Multiplier",
     "UI_SETTING_ATTRIBUTE_MULTIPLIER": "Attribute Multiplier",
@@ -66,7 +68,8 @@
 
     "UI_OVERVIEW_TAB": "Overview",
     "UI_NO_PERKS_OWNED": "No perks...",
-    "UI_RESET_ALL_SKILLS_BTN": "Reset all trees",
+    "UI_NO_DESCRIPTION": "No description available.",
+    "UI_NATIVE_PERKS": "Native Perks",
     "UI_LEVEL_FORMAT": "Level: %d",
     "UI_ATTRIBUTES_POINTS_FORMAT": "Attributes (%d / %d)",
     "UI_SKILLS_POINTS_FORMAT": "Skills (%d / %d)",

@@ -56,6 +56,8 @@
     "UI_RESET_ATTRIBUTES": "Réinitialiser les attributs",
     "UI_RESET_SKILLS": "Réinitialiser toutes les compétences",
     "UI_RESET_PERK_TREE": "Réinitialiser l'arbre",
+    "UI_RESET_ALL_PERK_TREES": "Réinitialiser tous les arbres",
+    "UI_RESET_ALL_PERKS": "Réinitialiser tous les atouts (incl. innés)",
     
     "UI_SETTING_LEVEL_MULTIPLIER": "Multiplicateur de niveau",
     "UI_SETTING_ATTRIBUTE_MULTIPLIER": "Multiplicateur d'attributs",
@@ -66,7 +68,8 @@
 
     "UI_OVERVIEW_TAB": "Aperçu",
     "UI_NO_PERKS_OWNED": "Aucun atout possédé...",
-    "UI_RESET_ALL_SKILLS_BTN": "Réinitialiser tous les arbres",
+    "UI_NO_DESCRIPTION": "Aucune description disponible.",
+    "UI_NATIVE_PERKS": "Atouts innés",
     "UI_LEVEL_FORMAT": "Niveau : %d",
     "UI_ATTRIBUTES_POINTS_FORMAT": "Attributs (%d / %d)",
     "UI_SKILLS_POINTS_FORMAT": "Compétences (%d / %d)",

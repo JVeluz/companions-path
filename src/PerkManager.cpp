@@ -217,8 +217,9 @@ namespace PerkManager {
     }
 
     void Refund(RE::Actor* actor) {
-        ActorEngine::RemovePerks(actor);
-        Storage::Perks::Clear(actor);
+        for (auto& [actorValue, perkTree] : perkTrees) {
+            Refund(actor, &perkTree);
+        }
     }
 
     void Refund(RE::Actor* actor, const Perks::PerkNode* node) {
@@ -243,6 +244,11 @@ namespace PerkManager {
                 Storage::Perks::RecordRefund(actor, perk);
             }
         }
+    }
+
+    void RefundAll(RE::Actor* actor) {
+        ActorEngine::RemovePerks(actor);
+        Storage::Perks::Clear(actor);
     }
 
     void Reapply() {
