@@ -11,7 +11,8 @@ struct Config {
 };
 
 struct Profile {
-    bool harmonize = false;
+    bool harmonizeStats = false;
+    bool harmonizePerks = false;
     bool syncLevel = false;
     float levelMultiplier = 1.0f;
     float attributeMultiplier = 1.0f;

@@ -116,14 +116,16 @@ namespace ProfileRepository {
     const std::unordered_map<std::string, ActorProfile>& GetActorProfiles() { return actorProfiles; }
 
     void UpdateSettings(const Profile& newSettings) {
-        profile.harmonize = newSettings.harmonize;
+        profile.harmonizeStats = newSettings.harmonizeStats;
+        profile.harmonizePerks = newSettings.harmonizePerks;
         profile.syncLevel = newSettings.syncLevel;
         profile.levelMultiplier = newSettings.levelMultiplier;
         profile.attributeMultiplier = newSettings.attributeMultiplier;
         profile.skillMultiplier = newSettings.skillMultiplier;
         profile.perkMultiplier = newSettings.perkMultiplier;
 
-        currentProfileJson["Settings"]["Harmonize"] = profile.harmonize;
+        currentProfileJson["Settings"]["HarmonizeStats"] = profile.harmonizeStats;
+        currentProfileJson["Settings"]["HarmonizePerks"] = profile.harmonizePerks;
         currentProfileJson["Settings"]["SyncLevel"] = profile.syncLevel;
         currentProfileJson["Settings"]["LevelMultiplier"] = profile.levelMultiplier;
         currentProfileJson["Settings"]["AttributeMultiplier"] = profile.attributeMultiplier;
@@ -180,10 +182,11 @@ namespace ProfileRepository {
 
         if (currentProfileJson.contains("Settings")) {
             const auto& gs = currentProfileJson["Settings"];
-            if (gs.contains("Harmonize")) profile.harmonize = gs["Harmonize"].get<bool>();
+            if (gs.contains("HarmonizeStats")) profile.harmonizeStats = gs["HarmonizeStats"].get<bool>();
+            if (gs.contains("HarmonizePerks")) profile.harmonizePerks = gs["HarmonizePerks"].get<bool>();
             if (gs.contains("SyncLevel")) profile.syncLevel = gs["SyncLevel"].get<bool>();
             if (gs.contains("LevelMultiplier")) profile.levelMultiplier = gs["LevelMultiplier"].get<float>();
-            if (gs.contains("AttributeMultiplier")) profile.attributeMultiplier = gs["AttributeMultiplier"].get<float>();
+            if (gs.contains("AttributeMultiplier")) profile.attributeMultiplier = gs["AttributeMultiplier"].get<float>(); 
             if (gs.contains("SkillMultiplier")) profile.skillMultiplier = gs["SkillMultiplier"].get<float>();
             if (gs.contains("PerkMultiplier")) profile.perkMultiplier = gs["PerkMultiplier"].get<float>();
         }

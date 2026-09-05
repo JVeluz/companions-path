@@ -3,6 +3,15 @@
 namespace {
     std::vector<RE::ActorPtr> activeFollowers;
     bool IsValidIndex(int index) { return index >= 0 && index < activeFollowers.size(); }
+
+    bool IsFollowerFaction(RE::ActorPtr actorPtr) {
+        auto followerFaction = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESFaction>(0x5C84E, "Skyrim.esm");
+        return actorPtr && actorPtr->IsInFaction(followerFaction);
+    }
+    
+    bool IsPlayerTeammate(RE::ActorPtr actorPtr) {
+        return actorPtr && actorPtr->IsPlayerTeammate();
+    }
 }
 
 namespace FollowerManager {
@@ -15,16 +24,15 @@ namespace FollowerManager {
     }
 
     void Refresh() {
-        auto followerFaction = RE::TESDataHandler::GetSingleton()->LookupForm<RE::TESFaction>(0x5C84E, "Skyrim.esm");
         auto processLists = RE::ProcessLists::GetSingleton();
 
-        if (!followerFaction || !processLists) return;
+        if (!processLists) return;
 
         activeFollowers.clear();
 
         for (auto& actorHandle : processLists->highActorHandles) {
             auto actorPtr = actorHandle.get();
-            if (actorPtr && actorPtr->IsInFaction(followerFaction)) {
+            if (IsPlayerTeammate(actorPtr) || IsFollowerFaction(actorPtr)) {
                 activeFollowers.push_back(actorPtr);
             }
         }

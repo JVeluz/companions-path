@@ -13,7 +13,7 @@ namespace Rules {
             int baseLevel = player ? player->GetLevel() : actor->GetLevel();
             return static_cast<int>(std::round(baseLevel * ProfileManager::GetProfile().levelMultiplier));
         }
-        return static_cast<int>(std::round(actor->GetLevel() * ProfileManager::GetProfile().levelMultiplier)); 
+        return static_cast<int>(std::round(actor->GetLevel() * ProfileManager::GetProfile().levelMultiplier));
     }
 
     namespace Stats {
@@ -54,7 +54,7 @@ namespace Rules {
                 return it->second;
             }
 
-            if (!ProfileManager::GetProfile().harmonize) {
+            if (!ProfileManager::GetProfile().harmonizeStats) {
                 if (auto baseNPC = actor->GetActorBase()) {
                     return baseNPC->GetActorValue(actorValue);
                 }
@@ -75,6 +75,6 @@ namespace Rules {
     }
 
     namespace Perks {
-        int GetPoints(RE::Actor* actor) { return static_cast<int>(std::round(std::max(0, GetLevel(actor) - 1)) * ProfileManager::GetProfile().perkMultiplier); }
+        int GetPoints(RE::Actor* actor) { return static_cast<int>(std::round(std::max(0, GetLevel(actor) - 1) * ProfileManager::GetProfile().perkMultiplier)); }
     }
 }

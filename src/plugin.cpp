@@ -30,7 +30,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
                 UI::Settings::RefreshProfiles();
 
                 const auto& currentProfile = ProfileManager::GetProfile();
-                if (currentProfile.harmonize) {
+                if (currentProfile.harmonizeStats) {
                     StatManager::Harmonize();
                 }
             });
@@ -49,7 +49,7 @@ void OnMessage(SKSE::MessagingInterface::Message* message) {
         case SKSE::MessagingInterface::kNewGame: {
             FollowerManager::Refresh();
             const auto& currentProfile = ProfileManager::GetProfile();
-            if (currentProfile.harmonize) {
+            if (currentProfile.harmonizePerks) {
                 PerkManager::Harmonize();
             } else {
                 PerkManager::Reapply();

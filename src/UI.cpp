@@ -75,7 +75,9 @@ namespace {
 }
 
 namespace UI {
-    int selectedCompanionIndex = 0;
+    uintptr_t selectedCompanionID = 0;
+    int currentMenuContext = 0;
+    bool needsTabSync = false;
 
     void Register() {
         if (SKSEMenuFramework::IsInstalled()) {
@@ -169,11 +171,11 @@ namespace UI {
         }
 
         void __stdcall Render() {
-            auto followers = FollowerManager::GetActorPtrs();
-
-            if (followers.empty()) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
-                return;
+            if (UI::currentMenuContext != 1) {
+                UI::currentMenuContext = 1;
+                UI::needsTabSync = true;
+                FollowerManager::Refresh();
+                StatManager::Harmonize();
             }
 
             if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
@@ -181,12 +183,23 @@ namespace UI {
                 StatManager::Harmonize();
             }
 
+            auto followers = FollowerManager::GetActorPtrs();
+            
+            if (followers.empty()) {
+                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
+                return;
+            }
+
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (ImGuiMCP::BeginTabBar("StatsTabBar")) {
-                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"))) {
+            if (ImGuiMCP::BeginTabBar("FollowersSharedTabBar")) {
+                int overviewFlags = (UI::needsTabSync && UI::selectedCompanionID == 0) ? ImGuiMCP::ImGuiTabItemFlags_SetSelected : 0;
+
+                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"), nullptr, overviewFlags)) {
+                    UI::selectedCompanionID = 0;
+
                     ImGuiMCP::BeginChild("OverviewScrollArea", ImGuiMCP::ImVec2(0, 0), false, ImGuiMCP::ImGuiWindowFlags_HorizontalScrollbar);
 
                     for (size_t i = 0; i < followers.size(); ++i) {
@@ -250,10 +263,15 @@ namespace UI {
 
                 for (size_t i = 0; i < followers.size(); ++i) {
                     auto actor = followers[i].get();
+                    uintptr_t actorID = reinterpret_cast<uintptr_t>(actor);
                     std::string baseName = actor ? followers[i]->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
-                    std::string tabName = baseName + "###StatsTab_" + std::to_string(reinterpret_cast<uintptr_t>(actor));
+                    std::string tabName = baseName + "###FollowerTab_" + std::to_string(actorID);
 
-                    if (ImGuiMCP::BeginTabItem(tabName.c_str())) {
+                    int tabFlags = (UI::needsTabSync && UI::selectedCompanionID == actorID) ? ImGuiMCP::ImGuiTabItemFlags_SetSelected : 0;
+
+                    if (ImGuiMCP::BeginTabItem(tabName.c_str(), nullptr, tabFlags)) {
+                        UI::selectedCompanionID = actorID;
+
                         if (actor) {
                             RenderSingleFollowerTab(actor);
                         } else {
@@ -265,6 +283,7 @@ namespace UI {
 
                 ImGuiMCP::EndTabBar();
             }
+            UI::needsTabSync = false;
         }
     }
 
@@ -293,7 +312,8 @@ namespace UI {
             Profile profile = ProfileManager::GetProfile();
             bool hasChanged = false;
 
-            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_HARMONIZE"), &profile.harmonize)) hasChanged = true;
+            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_HARMONIZE_STATS"), &profile.harmonizeStats)) hasChanged = true;
+            if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_HARMONIZE_PERKS"), &profile.harmonizePerks)) hasChanged = true;
             if (ImGuiMCP::Checkbox(Language::GetString("UI_SETTING_SYNC_LEVEL"), &profile.syncLevel)) hasChanged = true;
 
             ImGuiMCP::Spacing();
@@ -453,10 +473,6 @@ namespace UI {
             RE::ActorValue currentSkill = profile.skills[selectedSkillIndex];
             const Perks::PerkTree* tree = PerkManager::GetPerkTree(currentSkill);
 
-            ImGuiMCP::Spacing();
-            ImGuiMCP::Separator();
-            ImGuiMCP::Spacing();
-
             int remainingPoints = PerkManager::GetRemainingPoints(selectedActor);
             ImGuiMCP::Text(Language::GetString("UI_PERK_POINTS_AVAILABLE"), remainingPoints);
             ImGuiMCP::Spacing();
@@ -502,11 +518,11 @@ namespace UI {
         }
 
         void __stdcall Render() {
-            auto followers = FollowerManager::GetActorPtrs();
-
-            if (followers.empty()) {
-                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
-                return;
+            if (UI::currentMenuContext != 2) {
+                UI::currentMenuContext = 2;
+                UI::needsTabSync = true;
+                FollowerManager::Refresh();
+                StatManager::Harmonize();
             }
 
             if (ImGuiMCP::Button(Language::GetString("UI_REFRESH_FOLLOWERS"))) {
@@ -514,12 +530,23 @@ namespace UI {
                 StatManager::Harmonize();
             }
 
+            auto followers = FollowerManager::GetActorPtrs();
+
+            if (followers.empty()) {
+                ImGuiMCP::Text("%s", Language::GetString("UI_NO_FOLLOWER"));
+                return;
+            }
+
             ImGuiMCP::Spacing();
             ImGuiMCP::Separator();
             ImGuiMCP::Spacing();
 
-            if (ImGuiMCP::BeginTabBar("FollowersPerksTabBar")) {
-                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"))) {
+            if (ImGuiMCP::BeginTabBar("FollowersSharedTabBar")) {
+                int overviewFlags = (UI::needsTabSync && UI::selectedCompanionID == 0) ? ImGuiMCP::ImGuiTabItemFlags_SetSelected : 0;
+
+                if (ImGuiMCP::BeginTabItem(Language::GetString("UI_OVERVIEW_TAB"), nullptr, overviewFlags)) {
+                    UI::selectedCompanionID = 0;
+
                     ImGuiMCP::BeginChild("OverviewScrollArea", ImGuiMCP::ImVec2(0, 0), false, ImGuiMCP::ImGuiWindowFlags_HorizontalScrollbar);
 
                     for (size_t i = 0; i < followers.size(); ++i) {
@@ -654,10 +681,15 @@ namespace UI {
 
                 for (size_t i = 0; i < followers.size(); ++i) {
                     auto actor = followers[i].get();
+                    uintptr_t actorID = reinterpret_cast<uintptr_t>(actor);
                     std::string baseName = actor ? followers[i]->GetName() : Language::GetString("UI_UNKNOWN_UNLOADED");
-                    std::string tabName = baseName + "###" + std::to_string(reinterpret_cast<uintptr_t>(actor));
+                    std::string tabName = baseName + "###FollowerTab_" + std::to_string(actorID);
 
-                    if (ImGuiMCP::BeginTabItem(tabName.c_str())) {
+                    int tabFlags = (UI::needsTabSync && UI::selectedCompanionID == actorID) ? ImGuiMCP::ImGuiTabItemFlags_SetSelected : 0;
+
+                    if (ImGuiMCP::BeginTabItem(tabName.c_str(), nullptr, tabFlags)) {
+                        UI::selectedCompanionID = actorID;
+
                         if (actor) {
                             RenderSingleFollowerTab(actor);
                         } else {
@@ -669,6 +701,7 @@ namespace UI {
 
                 ImGuiMCP::EndTabBar();
             }
+            UI::needsTabSync = false;
         }
     }
 }
